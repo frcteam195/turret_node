@@ -1,16 +1,22 @@
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include "ck_utilities/Motor.hpp"
+#include "tf2_ros/transform_broadcaster.h"
+#include "tf2/LinearMath/Quaternion.h"
 
 #include <thread>
 #include <string>
 #include <mutex>
 
 #include <rio_control_node/Joystick_Status.h>
+#include <rio_control_node/Motor_Status.h>
 #include <hmi_agent_node/HMI_Signals.h>
 
 ros::NodeHandle* node;
 rio_control_node::Joystick_Status joystick_status;
+tf2_ros::TransformBroadcaster * tfBroadcaster;
+
+#define INCHES_TO_METERS 0.0254
 
 uint32_t config_i = 0;
 
@@ -65,6 +71,45 @@ void config_motors()
     Turret_Shooter_Master->config().set_peak_output_reverse(0.3);
 }
 
+void motor_status_callback(const rio_control_node::Motor_Status& msg)
+{
+    double motor_rotations = 0;
+    bool found_motor = false;
+
+    for(std::vector<rio_control_node::Motor_Info>::const_iterator i = msg.motors.begin();
+        i != msg.motors.end();
+        i++)
+    {
+        if((*i).id == 8)
+        {
+            found_motor = true;
+            motor_rotations = (*i).sensor_position;
+        }
+    }
+
+    if(found_motor)
+    {
+        geometry_msgs::TransformStamped transformStamped;
+
+        transformStamped.header.stamp = ros::Time::now();
+        transformStamped.header.frame_id = "base_link";
+        transformStamped.child_frame_id = "turret_link";
+
+        transformStamped.transform.translation.x = 0;
+        transformStamped.transform.translation.y = 0;
+        transformStamped.transform.translation.z = 14 * INCHES_TO_METERS;
+
+        tf2::Quaternion q;
+        q.setRPY(0, 0, motor_rotations * 2.0 * M_PI);
+        transformStamped.transform.rotation.x = q.x();
+        transformStamped.transform.rotation.y = q.y();
+        transformStamped.transform.rotation.z = q.z();
+        transformStamped.transform.rotation.w = q.w();
+
+        tfBroadcaster->sendTransform(transformStamped);
+    }
+}
+
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "turret_node");
@@ -74,6 +119,9 @@ int main(int argc, char **argv)
     config_motors();
 
     ros::Subscriber hmi_subscribe = node->subscribe("/HMISignals", 20, hmi_signal_callback);
+    ros::Subscriber motor_status_subscribe = node->subscribe("/MotorStatus", 20, motor_status_callback);
+
+	tfBroadcaster = new tf2_ros::TransformBroadcaster();
 
 	ros::spin();
 	return 0;

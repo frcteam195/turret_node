@@ -4,14 +4,14 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 project(${PROJECT_NAME})
 
-find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation rio_control_node ck_utilities_node)
+find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation rio_control_node ck_utilities_node tf2 tf2_eigen tf2_geometry_msgs tf2_ros)
 
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES rio_control_node
 #  CATKIN_DEPENDS other_catkin_pkg
 #  DEPENDS system_lib
-  CATKIN_DEPENDS roscpp message_generation message_runtime rio_control_node ck_utilities_node
+  CATKIN_DEPENDS roscpp message_generation message_runtime rio_control_node ck_utilities_node tf2 tf2_ros
 )
 
 include_directories(
