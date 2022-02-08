@@ -1,294 +1,62 @@
 #include "ros/ros.h"
 #include "std_msgs/String.h"
+#include "ck_utilities/Motor.hpp"
 
 #include <thread>
 #include <string>
 #include <mutex>
 
-#include <rio_control_node/Motor_Configuration.h>
-#include <rio_control_node/Motor_Status.h>
-#include <rio_control_node/Motor_Control.h>
 #include <rio_control_node/Joystick_Status.h>
+#include <hmi_agent_node/HMI_Signals.h>
 
 ros::NodeHandle* node;
 rio_control_node::Joystick_Status joystick_status;
-
-ros::Publisher motor_control_pub;
-ros::Publisher motor_config_pub;
 
 uint32_t config_i = 0;
 
 double turret_target = 0;
 
+Motor Turret_Shooter_Master(13, Motor::Motor_Type::TALON_FX);
+Motor Turret_Shooter_Slave_Motor(14, Motor::Motor_Type::TALON_FX);
+Motor Turret_Yaw_Motor(8, Motor::Motor_Type::TALON_FX);
+Motor Turret_Hood_Motor(12, Motor::Motor_Type::TALON_FX);
 
-void set_turret_clockwise()
+void hmi_signal_callback(const hmi_agent_node::HMI_Signals& msg)
 {
-    turret_target += 0.01;
+    (void) msg;
+
+    Turret_Yaw_Motor.set(Motor::Control_Mode::MOTION_MAGIC, 0, 0);
+    Turret_Hood_Motor.set(Motor::Control_Mode::MOTION_MAGIC, 0, 0);
+    Turret_Shooter_Master.set(Motor::Control_Mode::VELOCITY, 0, 0);
 }
-
-void set_turret_counter_clockwise()
-{
-    turret_target -= 0.01;
-}
-
-
-
-void publish_flywheel()
-{
-    rio_control_node::Motor_Control motor_control;
-
-    rio_control_node::Motor shooterWheel;
-    shooterWheel.id = 13;
-    shooterWheel.output_value = 0;
-    shooterWheel.controller_type = (int8_t)rio_control_node::Motor_Config::TALON_FX;
-    shooterWheel.control_mode = rio_control_node::Motor::VELOCITY;
-    motor_control.motors.push_back(shooterWheel);
-
-    rio_control_node::Motor follower;
-    follower.id = 14;
-    follower.output_value = 13;
-    follower.controller_type = (int8_t)rio_control_node::Motor_Config::TALON_FX;
-    follower.control_mode = rio_control_node::Motor::FOLLOWER;
-    motor_control.motors.push_back(follower);
-    motor_control_pub.publish(motor_control);
-}
-
-void publish_angle( float input_angle )
-{
-    rio_control_node::Motor_Control motor_control;
-    rio_control_node::Motor motor;
-
-    motor.id = 8;
-    motor.controller_type = rio_control_node::Motor::TALON_FX;
-    motor.control_mode = rio_control_node::Motor::POSITION;
-    motor.output_value = input_angle;
-    motor.arbitrary_feedforward = 0;
-
-    motor_control.motors.push_back(motor);
-    motor_control_pub.publish(motor_control);
-}
-
 
 void publish_config()
 {
-    rio_control_node::Motor_Configuration all_config;
-	rio_control_node::Motor_Config motor_config;
-    rio_control_node::Motor_Control motor_control;
-	
+    Turret_Yaw_Motor.config().set_kP(0.67);
+    Turret_Yaw_Motor.config().set_kI(0.0);
+    Turret_Yaw_Motor.config().set_kD(0.92);
+    Turret_Yaw_Motor.config().set_kF(0.047651);
+    Turret_Yaw_Motor.config().set_motion_cruise_velocity(16000);
+    Turret_Yaw_Motor.config().set_motion_acceleration(36000);
+    Turret_Yaw_Motor.config().set_motion_s_curve_strength(5);
+
+    Turret_Hood_Motor.config().set_kP(0.67);
+    Turret_Hood_Motor.config().set_kI(0.0);
+    Turret_Hood_Motor.config().set_kD(0.92);
+    Turret_Hood_Motor.config().set_kF(0.047651);
+    Turret_Hood_Motor.config().set_motion_cruise_velocity(16000);
+    Turret_Hood_Motor.config().set_motion_acceleration(32000);
+    Turret_Hood_Motor.config().set_motion_s_curve_strength(5);
     
-    motor_config.id = 8;
-	motor_config.controller_type = (int8_t)rio_control_node::Motor_Config::TALON_FX;
-	motor_config.controller_mode = rio_control_node::Motor_Config::MASTER;
-	motor_config.invert_type = rio_control_node::Motor_Config::NONE;
-	motor_config.neutral_mode = rio_control_node::Motor_Config::COAST;
-	motor_config.voltage_compensation_saturation = 12;
-	motor_config.voltage_compensation_enabled = true;
-	all_config.motors.push_back(motor_config);
+    Turret_Shooter_Slave_Motor.config().set_follower(true, 13);
+    Turret_Shooter_Slave_Motor.config().set_inverted(true);
 
-    motor_config.id = 12;
-	motor_config.controller_type = (int8_t)rio_control_node::Motor_Config::TALON_FX;
-	motor_config.controller_mode = rio_control_node::Motor_Config::MASTER;
-	motor_config.invert_type = rio_control_node::Motor_Config::NONE;
-	motor_config.neutral_mode = rio_control_node::Motor_Config::COAST;
-	motor_config.voltage_compensation_saturation = 12;
-	motor_config.voltage_compensation_enabled = true;
-    all_config.motors.push_back(motor_config);
-
-    rio_control_node::Motor shooterWheel;
-    shooterWheel.id = 13;
-    shooterWheel.output_value = 0;
-    shooterWheel.controller_type = (int8_t)rio_control_node::Motor_Config::TALON_FX;
-    shooterWheel.control_mode = rio_control_node::Motor::VELOCITY;
-    motor_control.motors.push_back(shooterWheel);
-
-    motor_config.id = 13;
-	motor_config.controller_type = (int8_t)rio_control_node::Motor_Config::TALON_FX;
-	motor_config.controller_mode = rio_control_node::Motor_Config::MASTER;
-	motor_config.invert_type = rio_control_node::Motor_Config::NONE;
-	motor_config.neutral_mode = rio_control_node::Motor_Config::COAST;
-	motor_config.voltage_compensation_saturation = 12;
-	motor_config.voltage_compensation_enabled = true;
-    all_config.motors.push_back(motor_config);
-
-    rio_control_node::Motor follower;
-    follower.id = 14;
-    follower.output_value = 13;
-    follower.controller_type = (int8_t)rio_control_node::Motor_Config::TALON_FX;
-    follower.control_mode = rio_control_node::Motor::FOLLOWER;
-    motor_control.motors.push_back(follower);
-
-    motor_config.id = 14;
-	motor_config.controller_type = (int8_t)rio_control_node::Motor_Config::TALON_FX;
-	motor_config.controller_mode = rio_control_node::Motor_Config::FOLLOWER;
-	motor_config.invert_type = rio_control_node::Motor_Config::OPPOSE_MASTER;
-	motor_config.neutral_mode = rio_control_node::Motor_Config::COAST;
-	motor_config.voltage_compensation_saturation = 12;
-	motor_config.voltage_compensation_enabled = true;
-    all_config.motors.push_back(motor_config);
-
-    motor_config_pub.publish(all_config);
-    motor_control_pub.publish(motor_control);
-}
-
-// Hood Stuff
-
-double hood_angle = 0;
-
-void raise_hood()
-{
-    hood_angle -= 0.01;
-}
-
-void lower_hood()
-{
-    hood_angle += 0.01;
-}
-
-void publish_hood_angle( float input_angle )
-{  
-    rio_control_node::Motor_Control motor_control;
-    rio_control_node::Motor motor;
-
-    motor.id = 12;
-    motor.controller_type = rio_control_node::Motor::TALON_FX;
-    motor.control_mode = rio_control_node::Motor::POSITION;
-    motor.output_value = input_angle;
-    motor.arbitrary_feedforward = 0;
-
-    motor_control.motors.push_back(motor);
-    motor_control_pub.publish(motor_control);
-}
-
-void ButtonStatusUp( const rio_control_node::Joystick_Status& buttonUp_status)
-{
-    if (buttonUp_status.joysticks.size() <= 0)
-    {
-        return;
-    }
-
-    if (buttonUp_status.joysticks[0].buttons.size() <= 3)
-    {
-        return;
-    }
-
-    float value_buttonUp = buttonUp_status.joysticks[0].buttons[3];
-
-    if (value_buttonUp > 0)
-    {
-        raise_hood();
-    }
-
-    publish_hood_angle(hood_angle);
-
-    if (config_i % 50 == 0)
-    {
-        publish_config();
-    }
-
-    config_i++;
-}
-
-
-void ButtonStatusDown( const rio_control_node::Joystick_Status& buttonDown_status)
-{
-    if (buttonDown_status.joysticks.size() <= 0)
-    {
-        return;
-    }
-
-    if (buttonDown_status.joysticks[0].buttons.size() <= 1)
-    {
-        return;
-    }
-
-    float value_buttonDown = buttonDown_status.joysticks[0].buttons[1];
-    if (value_buttonDown > 0)
-    {
-        lower_hood();
-    }
-
-    publish_hood_angle(hood_angle);
-
-    if (config_i % 50 == 0)
-    {
-        publish_config();
-    }
-
-    config_i++;
-}
-
-
-
-void joystickStatusCallback( const rio_control_node::Joystick_Status& joystick_in )
-{
-    (void) joystick_in;
-    // joystick_status = joystick_in;
-
-    // ButtonStatusUp(joystick_status);
-    // ButtonStatusDown(joystick_status);
-
-    // if( joystick_status.joysticks.size() <= 0 )
-    // {
-    //     return;
-    // }
-
-    // if( joystick_status.joysticks[0].axes.size() <= 0 )
-    // {
-    //     return;
-    // }
-
-    // now at this point, we can use the first axes in the first joystick
-
-    // float deadband = 0.2;
-    // float value_axes = joystick_status.joysticks[0].axes[0];
-    // (void) deadband;
-    // (void) value_axes;
-    // if( abs(value_axes) < deadband  )
-    // {
-    //     return;
-    // }
-
-    // if( value_axes > 0 )
-    // {
-    //     set_turret_clockwise();
-    // }
-
-    // if( value_axes < 0 )
-    // {
-    //     set_turret_counter_clockwise();
-    // }
-
-    publish_angle( turret_target );
-    publish_flywheel();
-    if(config_i % 50 == 0)
-    {
-        publish_config();
-    }
-    config_i++;
-}
-
-void motorStatusCallback( const rio_control_node::Motor_Status& motor_status_in )
-{
-    (void)motor_status_in;
-    publish_angle( turret_target );
-    publish_hood_angle(0);
-    publish_flywheel();
-    if(config_i % 50 == 0)
-    {
-        publish_config();
-    }
-}
-
-
-
-float deadband_check(float d, float val)
-{
-    if (abs(val) < d)
-    {
-        return 0;
-    }
-    return val;
-
+    Turret_Shooter_Master.config().set_kP(0.03);
+    Turret_Shooter_Master.config().set_kI(0.0);
+    Turret_Shooter_Master.config().set_kD(0.04);
+    Turret_Shooter_Master.config().set_kF(0.047651);
+    Turret_Shooter_Master.config().set_closed_loop_ramp(2.5);
+    Turret_Shooter_Master.config().set_peak_output_reverse(0.3);
 }
 
 int main(int argc, char **argv)
@@ -297,9 +65,7 @@ int main(int argc, char **argv)
 	ros::NodeHandle n;
 	node = &n;
 
-    ros::Subscriber motor_status_sub = node->subscribe("MotorStatus", 10, motorStatusCallback);
-    motor_control_pub = node->advertise<rio_control_node::Motor_Control>("MotorControl", 10);
-	motor_config_pub = node->advertise<rio_control_node::Motor_Configuration>("MotorConfiguration", 10);
+    node->subscribe("/HMI_Signals", 20, hmi_signal_callback);
 
 	ros::spin();
 	return 0;
