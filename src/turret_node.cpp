@@ -73,7 +73,7 @@ int main(int argc, char **argv)
 
     config_motors();
 
-    ros::Subscriber hmi_subscribe = node->subscribe("/HMI_Signals", 20, hmi_signal_callback);
+    ros::Subscriber hmi_subscribe = node->subscribe("/HMISignals", 20, hmi_signal_callback);
 
 	ros::spin();
 	return 0;
