@@ -161,11 +161,14 @@ int main(int argc, char **argv)
 
 	tfBroadcaster = new tf2_ros::TransformBroadcaster();
 
+    ros::Rate rate(100);
     while(ros::ok())
     {
+        ros::spinOnce();
+        
         handle_actions();
 
-        ros::spinOnce();
+        rate.sleep();
     }
 
 	return 0;
