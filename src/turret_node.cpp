@@ -29,6 +29,7 @@ Motor * Turret_Shooter_Master;
 Motor * Turret_Shooter_Slave_Motor;
 Motor * Turret_Yaw_Motor;
 Motor * Turret_Hood_Motor;
+Motor * Inner_Intake_Motor;
 
 void hmi_signal_callback(const hmi_agent_node::HMI_Signals& msg)
 {
@@ -45,6 +46,7 @@ void config_motors()
     Turret_Shooter_Master = new Motor(13, Motor::Motor_Type::TALON_FX);
     Turret_Shooter_Slave_Motor = new Motor(14, Motor::Motor_Type::TALON_FX);
     Turret_Yaw_Motor = new Motor(8, Motor::Motor_Type::TALON_FX);
+    Inner_Intake_Motor = new Motor(9, Motor::Motor_Type::TALON_FX);
     Turret_Hood_Motor = new Motor(12, Motor::Motor_Type::TALON_FX);
 
     Turret_Yaw_Motor->config().set_kP(0.67);
@@ -65,7 +67,6 @@ void config_motors()
     Turret_Hood_Motor->config().set_motion_s_curve_strength(5);
     Turret_Hood_Motor->config().apply();
 
-    
     Turret_Shooter_Slave_Motor->config().set_follower(true, 13);
     Turret_Shooter_Slave_Motor->config().set_inverted(true);
     Turret_Shooter_Slave_Motor->config().apply();
