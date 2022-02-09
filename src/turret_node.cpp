@@ -50,6 +50,7 @@ void config_motors()
     Turret_Yaw_Motor->config().set_motion_cruise_velocity(16000);
     Turret_Yaw_Motor->config().set_motion_acceleration(36000);
     Turret_Yaw_Motor->config().set_motion_s_curve_strength(5);
+    Turret_Yaw_Motor->config().apply();
 
     Turret_Hood_Motor->config().set_kP(0.67);
     Turret_Hood_Motor->config().set_kI(0.0);
@@ -58,9 +59,12 @@ void config_motors()
     Turret_Hood_Motor->config().set_motion_cruise_velocity(16000);
     Turret_Hood_Motor->config().set_motion_acceleration(32000);
     Turret_Hood_Motor->config().set_motion_s_curve_strength(5);
+    Turret_Hood_Motor->config().apply();
+
     
     Turret_Shooter_Slave_Motor->config().set_follower(true, 13);
     Turret_Shooter_Slave_Motor->config().set_inverted(true);
+    Turret_Shooter_Slave_Motor->config().apply();
 
     Turret_Shooter_Master->config().set_kP(0.03);
     Turret_Shooter_Master->config().set_kI(0.0);
@@ -68,6 +72,7 @@ void config_motors()
     Turret_Shooter_Master->config().set_kF(0.047651);
     Turret_Shooter_Master->config().set_closed_loop_ramp(2.5);
     Turret_Shooter_Master->config().set_peak_output_reverse(0.3);
+    Turret_Shooter_Master->config().apply();
 }
 
 void motor_status_callback(const rio_control_node::Motor_Status& msg)
