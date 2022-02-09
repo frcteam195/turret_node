@@ -29,12 +29,11 @@ Motor * Turret_Hood_Motor;
 
 void hmi_signal_callback(const hmi_agent_node::HMI_Signals& msg)
 {
-    (void) msg;
-    ROS_INFO("GOT INTO HERE EVEN!");
 
-    Turret_Yaw_Motor->set(Motor::Control_Mode::MOTION_MAGIC, 0, 0);
-    Turret_Hood_Motor->set(Motor::Control_Mode::MOTION_MAGIC, 0, 0);
-    Turret_Shooter_Master->set(Motor::Control_Mode::VELOCITY, 0, 0);
+
+    Turret_Yaw_Motor->set(Motor::Control_Mode::MOTION_MAGIC, msg.turret_aim_degrees / 360.0, 0);
+    Turret_Hood_Motor->set(Motor::Control_Mode::MOTION_MAGIC, msg.turret_hood_degrees / 360.0, 0);
+    Turret_Shooter_Master->set(Motor::Control_Mode::VELOCITY, msg.turret_speed_rpm, 0);
 }
 
 void config_motors()
