@@ -3,6 +3,7 @@
 #include "ck_utilities/Motor.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2/LinearMath/Quaternion.h"
+#include "hmi_agent/ActionNames.hpp"
 
 #include <thread>
 #include <string>
@@ -124,11 +125,11 @@ void handle_shoot_action()
     static bool shooting = false;
     static ros::Time shooting_start_time = ros::Time::now();
 
-    if( action_helper->check_action( "Shoot" ) && shooting == false)
+    if( action_helper->check_action( turret_actions[TurretActions::SHOOT_TURRET] ) && shooting == false)
     {
         shooting = true;
         shooting_start_time = ros::Time::now();
-        action_helper->update_action( "Shoot",
+        action_helper->update_action( turret_actions[TurretActions::SHOOT_TURRET],
                                         ActionHelper::ACTION_STATUS::COMPLETE );
     }
     if( shooting == true)
