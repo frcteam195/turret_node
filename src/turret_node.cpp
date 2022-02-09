@@ -134,11 +134,16 @@ void handle_shoot_action()
     }
     if( shooting == true)
     {
+        Inner_Intake_Motor->set(Motor::Control_Mode::PERCENT_OUTPUT, 1, 0);
         if (ros::Time::now() - shooting_start_time > ros::Duration(1))
         {
             ROS_INFO("SHOOTING!!!");
             shooting = false;
         }
+    }
+    else
+    {
+        Inner_Intake_Motor->set(Motor::Control_Mode::PERCENT_OUTPUT, 0, 0);
     }
 }
 
