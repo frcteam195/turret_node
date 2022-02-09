@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 project(${PROJECT_NAME})
 
-find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation rio_control_node ck_utilities_node tf2 tf2_eigen tf2_geometry_msgs tf2_ros)
+find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation rio_control_node ck_utilities_node tf2 tf2_eigen tf2_geometry_msgs tf2_ros action_processor_node)
 
 catkin_package(
 #  INCLUDE_DIRS include

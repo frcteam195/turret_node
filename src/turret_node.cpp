@@ -8,6 +8,8 @@
 #include <string>
 #include <mutex>
 
+#include <action_helper/action_helper.hpp>
+
 #include <rio_control_node/Joystick_Status.h>
 #include <rio_control_node/Motor_Status.h>
 #include <hmi_agent_node/HMI_Signals.h>
@@ -15,6 +17,7 @@
 ros::NodeHandle* node;
 rio_control_node::Joystick_Status joystick_status;
 tf2_ros::TransformBroadcaster * tfBroadcaster;
+ActionHelper* action_helper;
 
 #define INCHES_TO_METERS 0.0254
 
@@ -29,6 +32,7 @@ Motor * Turret_Hood_Motor;
 
 void hmi_signal_callback(const hmi_agent_node::HMI_Signals& msg)
 {
+    (void) msg;
 
 
     Turret_Yaw_Motor->set(Motor::Control_Mode::MOTION_MAGIC, msg.turret_aim_degrees / 360.0, 0);
@@ -114,6 +118,33 @@ void motor_status_callback(const rio_control_node::Motor_Status& msg)
     }
 }
 
+void handle_shoot_action()
+{
+    static bool shooting = false;
+    static ros::Time shooting_start_time = ros::Time::now();
+
+    if( action_helper->check_action( "Shoot" ) && shooting == false)
+    {
+        shooting = true;
+        shooting_start_time = ros::Time::now();
+        action_helper->update_action( "Shoot",
+                                        ActionHelper::ACTION_STATUS::COMPLETE );
+    }
+    if( shooting == true)
+    {
+        if (ros::Time::now() - shooting_start_time > ros::Duration(1))
+        {
+            ROS_INFO("SHOOTING!!!");
+            shooting = false;
+        }
+    }
+}
+
+void handle_actions()
+{
+    handle_shoot_action();
+}
+
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "turret_node");
@@ -125,8 +156,16 @@ int main(int argc, char **argv)
     ros::Subscriber hmi_subscribe = node->subscribe("/HMISignals", 20, hmi_signal_callback);
     ros::Subscriber motor_status_subscribe = node->subscribe("/MotorStatus", 20, motor_status_callback);
 
+    action_helper = new ActionHelper(node);
+
 	tfBroadcaster = new tf2_ros::TransformBroadcaster();
 
-	ros::spin();
+    while(ros::ok())
+    {
+        handle_actions();
+
+        ros::spinOnce();
+    }
+
 	return 0;
 }
