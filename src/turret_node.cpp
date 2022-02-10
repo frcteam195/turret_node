@@ -36,6 +36,15 @@ void hmi_signal_callback(const hmi_agent_node::HMI_Signals& msg)
 {
     (void) msg;
 
+    if (msg.shoot_turret)
+    {
+        Inner_Intake_Motor->set(Motor::Control_Mode::PERCENT_OUTPUT, 1, 0);
+    }
+    else
+    {
+        Inner_Intake_Motor->set(Motor::Control_Mode::PERCENT_OUTPUT, 0, 0);
+    }
+
 
     Turret_Yaw_Motor->set(Motor::Control_Mode::MOTION_MAGIC, msg.turret_aim_degrees / 360.0, 0);
     Turret_Hood_Motor->set(Motor::Control_Mode::MOTION_MAGIC, msg.turret_hood_degrees / 360.0, 0);
@@ -120,37 +129,7 @@ void motor_status_callback(const rio_control_node::Motor_Status& msg)
     }
 }
 
-void handle_shoot_action()
-{
-    static bool shooting = false;
-    static ros::Time shooting_start_time = ros::Time::now();
 
-    if( action_helper->check_action( turret_actions[TurretActions::SHOOT_TURRET] ) && shooting == false)
-    {
-        shooting = true;
-        shooting_start_time = ros::Time::now();
-        action_helper->update_action( turret_actions[TurretActions::SHOOT_TURRET],
-                                        ActionHelper::ACTION_STATUS::COMPLETE );
-    }
-    if( shooting == true)
-    {
-        Inner_Intake_Motor->set(Motor::Control_Mode::PERCENT_OUTPUT, 1, 0);
-        if (ros::Time::now() - shooting_start_time > ros::Duration(1))
-        {
-            ROS_INFO("SHOOTING!!!");
-            shooting = false;
-        }
-    }
-    else
-    {
-        Inner_Intake_Motor->set(Motor::Control_Mode::PERCENT_OUTPUT, 0, 0);
-    }
-}
-
-void handle_actions()
-{
-    handle_shoot_action();
-}
 
 int main(int argc, char **argv)
 {
@@ -171,8 +150,6 @@ int main(int argc, char **argv)
     while(ros::ok())
     {
         ros::spinOnce();
-        
-        handle_actions();
 
         rate.sleep();
     }
