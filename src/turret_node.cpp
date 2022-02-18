@@ -1,6 +1,7 @@
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include "ck_utilities/Motor.hpp"
+#include "ck_utilities/InterpolatingMap.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2/LinearMath/Quaternion.h"
 #include "hmi_agent/ActionNames.hpp"
@@ -145,6 +146,19 @@ int main(int argc, char **argv)
     action_helper = new ActionHelper(node);
 
 	tfBroadcaster = new tf2_ros::TransformBroadcaster();
+
+    InterpolatingMap<float, float> hood_lookup_table;
+    hood_lookup_table.insert(0, 100);
+    hood_lookup_table.insert(1, 200);
+    hood_lookup_table.insert(3, 300);
+    hood_lookup_table.insert(4, 800);
+    hood_lookup_table.insert(5, 1200);
+    hood_lookup_table.insert(10, 0);
+
+    std::stringstream output;
+    output << "0.5: " << hood_lookup_table.lookup(.5) << " 3:" << hood_lookup_table.lookup(3) << " 7:" << hood_lookup_table.lookup(7) << " 13:" << hood_lookup_table.lookup(13);
+
+    ROS_INFO("%s", output.str().c_str());
 
     ros::Rate rate(100);
     while(ros::ok())
