@@ -6,6 +6,7 @@
 #include "tf2_ros/transform_listener.h"
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2/LinearMath/Transform.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "hmi_agent/ActionNames.hpp"
 #include "math.h"
 #include <thread>
