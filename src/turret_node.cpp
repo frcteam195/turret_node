@@ -18,6 +18,7 @@
 #include <rio_control_node/Joystick_Status.h>
 #include <rio_control_node/Motor_Status.h>
 #include <hmi_agent_node/HMI_Signals.h>
+#include <geometry_msgs/TransformStamped.h>
 
 ros::NodeHandle* node;
 rio_control_node::Joystick_Status joystick_status;
@@ -56,7 +57,7 @@ float get_angle_to_hub()
                         
     try
     {
-        tf2::convert(tfBuffer.lookupTransform("base_link", "hub_link", ros::Time(0)), robot_base_to_hub);
+        // tf2::convert(tfBuffer.lookupTransform("base_link", "hub_link", ros::Time(0)), robot_base_to_hub);
         float theta;
         float x = robot_base_to_hub.getOrigin().getX();
         float y = robot_base_to_hub.getOrigin().getY();
@@ -80,9 +81,8 @@ float get_distance_to_hub()
                         
     try
     {
-        tf2::convert(tfBuffer.lookupTransform("base_link", "hub_link", ros::Time(0)), robot_base_to_hub);
+        // tf2::convert(tfBuffer.lookupTransform("base_link", "hub_link", ros::Time(0)), robot_base_to_hub);
         return robot_base_to_hub.getOrigin().length();
-
     }
 
     catch (...)
@@ -226,41 +226,42 @@ void config_motors()
 
 void motor_status_callback(const rio_control_node::Motor_Status& msg)
 {
-    double motor_rotations = 0;
-    bool found_motor = false;
+    (void) msg;
+    // double motor_rotations = 0;
+    // bool found_motor = false;
 
-    for(std::vector<rio_control_node::Motor_Info>::const_iterator i = msg.motors.begin();
-        i != msg.motors.end();
-        i++)
-    {
-        if((*i).id == 8)
-        {
-            found_motor = true;
-            motor_rotations = (*i).sensor_position;
-        }
-    }
+    // for(std::vector<rio_control_node::Motor_Info>::const_iterator i = msg.motors.begin();
+    //     i != msg.motors.end();
+    //     i++)
+    // {
+    //     if((*i).id == 8)
+    //     {
+    //         found_motor = true;
+    //         motor_rotations = (*i).sensor_position;
+    //     }
+    // }
 
-    if(found_motor)
-    {
-        geometry_msgs::TransformStamped transformStamped;
+    // if(found_motor)
+    // {
+    //     geometry_msgs::TransformStamped transformStamped;
 
-        transformStamped.header.stamp = ros::Time::now();
-        transformStamped.header.frame_id = "base_link";
-        transformStamped.child_frame_id = "turret_link";
+    //     transformStamped.header.stamp = ros::Time::now();
+    //     transformStamped.header.frame_id = "base_link";
+    //     transformStamped.child_frame_id = "turret_link";
 
-        transformStamped.transform.translation.x = 0;
-        transformStamped.transform.translation.y = 0;
-        transformStamped.transform.translation.z = 14 * INCHES_TO_METERS;
+    //     transformStamped.transform.translation.x = 0;
+    //     transformStamped.transform.translation.y = 0;
+    //     transformStamped.transform.translation.z = 14 * INCHES_TO_METERS;
 
-        tf2::Quaternion q;
-        q.setRPY(0, 0, motor_rotations * 2.0 * M_PI);
-        transformStamped.transform.rotation.x = q.x();
-        transformStamped.transform.rotation.y = q.y();
-        transformStamped.transform.rotation.z = q.z();
-        transformStamped.transform.rotation.w = q.w();
+    //     tf2::Quaternion q;
+    //     q.setRPY(0, 0, motor_rotations * 2.0 * M_PI);
+    //     transformStamped.transform.rotation.x = q.x();
+    //     transformStamped.transform.rotation.y = q.y();
+    //     transformStamped.transform.rotation.z = q.z();
+    //     transformStamped.transform.rotation.w = q.w();
 
-        tfBroadcaster->sendTransform(transformStamped);
-    }
+    //     tfBroadcaster->sendTransform(transformStamped);
+    // }
 }
 
 
