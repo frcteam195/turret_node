@@ -274,8 +274,8 @@ int main(int argc, char **argv)
 
     config_motors();
 
-    ros::Subscriber hmi_subscribe = node->subscribe("/HMISignals", 20, hmi_signal_callback);
-    ros::Subscriber motor_status_subscribe = node->subscribe("/MotorStatus", 20, motor_status_callback);
+    ros::Subscriber hmi_subscribe = node->subscribe("/HMISignals", 1, hmi_signal_callback);
+    ros::Subscriber motor_status_subscribe = node->subscribe("/MotorStatus", 1, motor_status_callback);
 
     action_helper = new ActionHelper(node);
 
