@@ -3,9 +3,11 @@
 #include "ck_utilities/Motor.hpp"
 #include "ck_utilities/InterpolatingMap.hpp"
 #include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/transform_listener.h"
 #include "tf2/LinearMath/Quaternion.h"
+#include "tf2/LinearMath/Transform.h"
 #include "hmi_agent/ActionNames.hpp"
-
+#include "math.h"
 #include <thread>
 #include <string>
 #include <mutex>
@@ -19,7 +21,20 @@
 ros::NodeHandle* node;
 rio_control_node::Joystick_Status joystick_status;
 tf2_ros::TransformBroadcaster * tfBroadcaster;
+tf2_ros::TransformListener * tfListener;
+tf2_ros::Buffer tfBuffer;
 ActionHelper* action_helper;
+
+enum class TurretStates
+{
+    MANUAL,
+    TRACKING,
+    AIM,
+    SHOOT,
+};
+static TurretStates turret_state = TurretStates::TRACKING;
+
+
 
 #define INCHES_TO_METERS 0.0254
 
@@ -32,6 +47,50 @@ Motor * Turret_Shooter_Slave_Motor;
 Motor * Turret_Yaw_Motor;
 Motor * Turret_Hood_Motor;
 Motor * Inner_Intake_Motor;
+
+float get_angle_to_hub()
+{
+    tf2::Stamped<tf2::Transform> robot_base_to_hub;
+   
+                        
+    try
+    {
+        tf2::convert(tfBuffer.lookupTransform("base_link", "hub_link", ros::Time(0)), robot_base_to_hub);
+        float theta;
+        float x = robot_base_to_hub.getOrigin().getX();
+        float y = robot_base_to_hub.getOrigin().getY();
+        theta = asin(y/sqrt(x * x + y * y));
+        return theta;
+        
+
+    }
+
+    catch (...)
+    {
+        ROS_WARN("Hub transform failed");
+    }
+    return 0;
+}
+
+float get_distance_to_hub()
+{
+    tf2::Stamped<tf2::Transform> robot_base_to_hub;
+   
+                        
+    try
+    {
+        tf2::convert(tfBuffer.lookupTransform("base_link", "hub_link", ros::Time(0)), robot_base_to_hub);
+        return robot_base_to_hub.getOrigin().length();
+
+    }
+
+    catch (...)
+    {
+        ROS_WARN("Hub transform failed");
+    }
+    return 0;
+
+}
 
 void hmi_signal_callback(const hmi_agent_node::HMI_Signals& msg)
 {
@@ -50,6 +109,79 @@ void hmi_signal_callback(const hmi_agent_node::HMI_Signals& msg)
     Turret_Yaw_Motor->set(Motor::Control_Mode::MOTION_MAGIC, msg.turret_aim_degrees / 360.0, 0);
     Turret_Hood_Motor->set(Motor::Control_Mode::MOTION_MAGIC, msg.turret_hood_degrees / 360.0, 0);
     Turret_Shooter_Master->set(Motor::Control_Mode::VELOCITY, msg.turret_speed_rpm, 0);
+}
+
+
+   
+void set_hood_distance(float distance)
+{
+    static InterpolatingMap<float, float> hood_lookup_table;
+    static bool first_time = true;
+    if (first_time)
+    {
+        hood_lookup_table.insert(0, 100);
+        hood_lookup_table.insert(1, 200);
+        hood_lookup_table.insert(3, 300);
+        hood_lookup_table.insert(4, 800);
+        hood_lookup_table.insert(5, 1200);
+        hood_lookup_table.insert(10, 0);
+        first_time = false;
+    }
+    float hood_angle = hood_lookup_table.lookup(distance);
+    Turret_Hood_Motor->set(Motor::Control_Mode::MOTION_MAGIC, hood_angle/360.0, 0);
+
+}
+
+
+
+void set_turret_angle(float angle)
+{
+    Turret_Yaw_Motor->set(Motor::Control_Mode::MOTION_MAGIC, angle/360.0, 0);
+}
+
+
+
+void step_state_machine() 
+{
+    switch (turret_state)
+    {
+        case TurretStates::MANUAL:
+        {
+            break;
+
+            //use operator controls to aim turret
+            
+        }
+        case TurretStates::TRACKING:
+        {
+            float distance = get_distance_to_hub();
+            float angle = get_angle_to_hub();
+            set_turret_angle(angle);
+            set_hood_distance(distance);
+            break;
+           
+            //aim turret
+            
+            //adjust hood
+        }
+        case TurretStates::AIM:
+        {
+            break;
+            //turn on limelight
+
+            //use limelight to aim
+
+            //set hood based on limelight
+
+            //spin up wheel
+        }
+        case TurretStates::SHOOT:
+        {
+            break;
+
+            //shoot the ball
+        }
+    }
 }
 
 void config_motors()
@@ -147,19 +279,10 @@ int main(int argc, char **argv)
 
 	tfBroadcaster = new tf2_ros::TransformBroadcaster();
 
-    InterpolatingMap<float, float> hood_lookup_table;
-    hood_lookup_table.insert(0, 100);
-    hood_lookup_table.insert(1, 200);
-    hood_lookup_table.insert(3, 300);
-    hood_lookup_table.insert(4, 800);
-    hood_lookup_table.insert(5, 1200);
-    hood_lookup_table.insert(10, 0);
+    
 
-    std::stringstream output;
-    output << "0.5: " << hood_lookup_table.lookup(.5) << " 3:" << hood_lookup_table.lookup(3) << " 7:" << hood_lookup_table.lookup(7) << " 13:" << hood_lookup_table.lookup(13);
-
-    ROS_INFO("%s", output.str().c_str());
-
+    
+    tfListener = new tf2_ros::TransformListener(tfBuffer);
     ros::Rate rate(100);
     while(ros::ok())
     {
