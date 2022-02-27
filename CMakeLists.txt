@@ -137,7 +137,7 @@ include_directories(
  ${CMAKE_SOURCE_DIR}/../../../third_party_libs/ROSProtoDef2022/out
 )
 
-message("CATKIN INCLUDES:${catkin_INCLUDE_DIRS}")
+message("${PROJECT_NAME} CATKIN INCLUDES:${catkin_INCLUDE_DIRS}")
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
