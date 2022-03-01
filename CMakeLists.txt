@@ -75,6 +75,7 @@ find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation rio_c
 generate_messages(
   DEPENDENCIES
   std_msgs  # Or other packages containing msgs
+  intake_node
 )
 
 ################################################
