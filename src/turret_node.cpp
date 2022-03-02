@@ -190,9 +190,7 @@ void hmi_signal_callback(const hmi_agent_node::HMI_Signals& msg)
     (void) msg;
 
 
-    Turret_Yaw_Motor->set(Motor::Control_Mode::MOTION_MAGIC, msg.turret_aim_degrees / 360.0, 0);
-    Turret_Hood_Motor->set(Motor::Control_Mode::MOTION_MAGIC, msg.turret_hood_degrees / 360.0, 0);
-    Turret_Shooter_Master->set(Motor::Control_Mode::VELOCITY, msg.turret_speed_rpm, 0);
+    //still needs to be updated
 }
 
 static bool limelightHasTarget = false;
@@ -366,7 +364,7 @@ void step_state_machine()
             controlMsg.command_shoot = true;
             intakeControlPublisher.publish(controlMsg);
 
-        
+              
 
             break;
 
