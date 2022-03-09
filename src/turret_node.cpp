@@ -24,10 +24,10 @@
 #include <hmi_agent_node/HMI_Signals.h>
 #include <geometry_msgs/TransformStamped.h>
 
-#define TURRET_SHOOTER_MASTER_CAN_ID 13
-#define TURRET_SHOOTER_SLAVE_CAN_ID 14
-#define TURRET_YAW_CAN_ID 8
-#define TURRET_HOOD_CAN_ID 12
+#define TURRET_SHOOTER_MASTER_CAN_ID 16
+#define TURRET_SHOOTER_SLAVE_CAN_ID 17
+#define TURRET_YAW_CAN_ID 18
+#define TURRET_HOOD_CAN_ID 19
 
 ros::NodeHandle* node;
 rio_control_node::Joystick_Status joystick_status;
