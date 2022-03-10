@@ -442,6 +442,7 @@ void step_state_machine()
             //shoot the ball
         }
     }
+        ROS_INFO("Turret state: %d", (int) turret_state);
 }
 
 void config_motors()
@@ -469,7 +470,7 @@ void config_motors()
     Turret_Hood_Motor->config().set_motion_s_curve_strength(5);
     Turret_Hood_Motor->config().apply();
 
-    Turret_Shooter_Slave_Motor->config().set_follower(true, 13);
+    Turret_Shooter_Slave_Motor->config().set_follower(true, TURRET_SHOOTER_MASTER_CAN_ID);
     Turret_Shooter_Slave_Motor->config().set_inverted(true);
     Turret_Shooter_Slave_Motor->config().apply();
 
@@ -549,6 +550,8 @@ int main(int argc, char **argv)
     while(ros::ok())
     {
         ros::spinOnce();
+
+        step_state_machine();
 
         rate.sleep();
     }
