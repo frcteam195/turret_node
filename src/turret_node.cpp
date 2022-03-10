@@ -250,9 +250,10 @@ void set_shooter_vel(float distance)
 
 }
 
+
 void turn_shooter_off()
 {
-    Turret_Shooter_Master->set(Motor::Control_Mode::PERCENT_OUTPUT, 0, 0);
+    Turret_Shooter_Master->set(Motor::Control_Mode::VELOCITY, 0, 0);
 
 }
 
@@ -279,7 +280,7 @@ void step_state_machine()
     {
         case TurretStates::MANUAL:
         {
-
+            
             break;
 
             //use operator controls to aim turret
@@ -474,10 +475,10 @@ void config_motors()
     Turret_Shooter_Slave_Motor->config().set_inverted(true);
     Turret_Shooter_Slave_Motor->config().apply();
 
-    Turret_Shooter_Master->config().set_kP(0.03);
+    Turret_Shooter_Master->config().set_kP(0.14);
     Turret_Shooter_Master->config().set_kI(0.0);
-    Turret_Shooter_Master->config().set_kD(0.04);
-    Turret_Shooter_Master->config().set_kF(0.047651);
+    Turret_Shooter_Master->config().set_kD(7.4);
+    Turret_Shooter_Master->config().set_kF(0.0505);
     Turret_Shooter_Master->config().set_closed_loop_ramp(2.5);
     Turret_Shooter_Master->config().set_peak_output_reverse(0.3);
     Turret_Shooter_Master->config().apply();
