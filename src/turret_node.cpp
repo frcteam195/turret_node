@@ -13,6 +13,7 @@
 #include "math.h"
 #include "intake_node/Intake_Control.h"
 #include "intake_node/Intake_Status.h"
+#include "turret_node/turret_diagnostics.h"
 #include <thread>
 #include <string>
 #include <mutex>
@@ -48,13 +49,67 @@ enum class TurretStates
 
 static TurretStates turret_state = TurretStates::TRACKING;
 static TurretStates next_turret_state = TurretStates::TRACKING;
+static bool readyToShoot = false;
+static bool limelightHasTarget = false;
+static float actualShooterRPM = 0;
+static float target_shooter_rpm = 0;
+static float target_hood_angle = 0;
+static float target_yaw_angle = 0;
 
+std::string turret_state_to_string(TurretStates state)
+{
+    switch (state)
+    {
+        case TurretStates::MANUAL:
+        {
+            return "MANUAL";
+            break;
+        }
+        case TurretStates::TRACKING:
+        {
+            return "TRACKING";
+            break;
+        }
+        case TurretStates::AIM:
+        {   
+            return "AIM";
+            break;
+        }
+        case TurretStates::TARGET_LOCKED:
+        {
+            return "TARGET_LOCKED";
+            break;
+        }
+        case TurretStates::SPIN_UP_SHOOTER:
+        {
+            return "SPIN_UP_SHOOTER";
+            break;
+        }
+        case TurretStates::SHOOT:
+        {
+            return "SHOOT";
+            break;
+        }
+    }
+    return "INVALID";
+}
+
+void publish_diagnostic_data()
+{
+    static ros::Publisher diagnostic_publisher = node->advertise<turret_node::turret_diagnostics>("/TurretNodeDiagnostics", 1);
+    turret_node::turret_diagnostics diagnostics;
+    diagnostics.turret_state = turret_state_to_string(turret_state);
+    diagnostics.next_turret_state = turret_state_to_string(next_turret_state);
+    diagnostics.actualShooterRPM = actualShooterRPM;
+    diagnostics.limelightHasTarget = limelightHasTarget;
+    diagnostics.readyToShoot = readyToShoot;
+    diagnostics.target_hood_angle = target_hood_angle;
+    diagnostics.target_shooter_rpm = target_shooter_rpm;
+    diagnostics.target_yaw_angle = target_yaw_angle;
+    diagnostic_publisher.publish(diagnostics);
+}
 
 #define INCHES_TO_METERS 0.0254
-
-uint32_t config_i = 0;
-
-double turret_target = 0;
 
 Motor * Turret_Shooter_Master;
 Motor * Turret_Shooter_Slave_Motor;
@@ -176,8 +231,6 @@ void turn_limelight_off()
     limelight_control_pub.publish(limelight_control);
 }
 
-static bool readyToShoot = false;
-
 void intake_status_callback(const intake_node::Intake_Status& msg)
 {
     (void) msg;
@@ -193,7 +246,6 @@ void hmi_signal_callback(const hmi_agent_node::HMI_Signals& msg)
     //still needs to be updated
 }
 
-static bool limelightHasTarget = false;
 
 void limelight_status_callback(const limelight_vision_node::Limelight_Status& msg)
 {
@@ -203,7 +255,6 @@ void limelight_status_callback(const limelight_vision_node::Limelight_Status& ms
     
 }
 
-static float actualShooterRPM = 0;
 
 bool reached_target_vel(float targetVel)
 {
@@ -228,12 +279,11 @@ void set_hood_distance(float distance)
         hood_lookup_table.insert(10, 0);
         first_time = false;
     }
-    float hood_angle = hood_lookup_table.lookup(distance);
-    Turret_Hood_Motor->set(Motor::Control_Mode::MOTION_MAGIC, hood_angle/360.0, 0);
+    target_hood_angle = hood_lookup_table.lookup(distance);
+    Turret_Hood_Motor->set(Motor::Control_Mode::MOTION_MAGIC, target_hood_angle/360.0, 0);
 
 }
 
-float shooter_rpm;
 
 void set_shooter_vel(float distance)
 {
@@ -245,8 +295,8 @@ void set_shooter_vel(float distance)
         shooter_rpm_lookup_table.insert(40, 5000);
         first_time = false;
     }
-    shooter_rpm = shooter_rpm_lookup_table.lookup(distance);
-    Turret_Shooter_Master->set(Motor::Control_Mode::VELOCITY, shooter_rpm, 0);
+    target_shooter_rpm = shooter_rpm_lookup_table.lookup(distance);
+    Turret_Shooter_Master->set(Motor::Control_Mode::VELOCITY, target_shooter_rpm, 0);
 
 }
 
@@ -260,6 +310,7 @@ void turn_shooter_off()
 
 void set_turret_angle(float angle)
 {
+    target_yaw_angle = angle;
     Turret_Yaw_Motor->set(Motor::Control_Mode::MOTION_MAGIC, angle/360.0, 0);
 }
 
@@ -422,7 +473,7 @@ void step_state_machine()
         }
         case TurretStates::SPIN_UP_SHOOTER:
         {
-            if (reached_target_vel(shooter_rpm) == true)
+            if (reached_target_vel(target_shooter_rpm) == true)
             {
                 turret_state = TurretStates::SHOOT;
             }

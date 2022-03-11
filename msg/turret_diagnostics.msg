@@ -1,0 +1,8 @@
+string turret_state
+string next_turret_state
+bool readyToShoot
+bool limelightHasTarget
+float32 actualShooterRPM
+float32 target_shooter_rpm
+float32 target_hood_angle
+float32 target_yaw_angle
