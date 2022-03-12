@@ -304,12 +304,12 @@ void step_state_machine()
         next_turret_state = TurretStates::MANUAL;
     }
 
-    turret_state = next_turret_state;
-
     if (turret_state != next_turret_state)
     {
         time_state_entered = ros::Time::now();
     }
+
+    turret_state = next_turret_state;
 
     ros::Duration time_in_state = ros::Time::now() - time_state_entered;
 
