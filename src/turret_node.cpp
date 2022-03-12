@@ -30,12 +30,12 @@
 #define TURRET_YAW_CAN_ID 18
 #define TURRET_HOOD_CAN_ID 19
 
-ros::NodeHandle* node;
+ros::NodeHandle *node;
 rio_control_node::Joystick_Status joystick_status;
-tf2_ros::TransformBroadcaster * tfBroadcaster;
-tf2_ros::TransformListener * tfListener;
+tf2_ros::TransformBroadcaster *tfBroadcaster;
+tf2_ros::TransformListener *tfListener;
 tf2_ros::Buffer tfBuffer;
-ActionHelper* action_helper;
+ActionHelper *action_helper;
 
 enum class TurretStates
 {
@@ -55,41 +55,45 @@ static float actualShooterRPM = 0;
 static float target_shooter_rpm = 0;
 static float target_hood_angle = 0;
 static float target_yaw_angle = 0;
+static float target_manual_shooter_rpm = 0;
+static float target_manual_hood_angle = 0;
+static float target_manual_yaw_angle = 0;
+static bool manual_control_enabled = false;
 
 std::string turret_state_to_string(TurretStates state)
 {
     switch (state)
     {
-        case TurretStates::MANUAL:
-        {
-            return "MANUAL";
-            break;
-        }
-        case TurretStates::TRACKING:
-        {
-            return "TRACKING";
-            break;
-        }
-        case TurretStates::AIM:
-        {   
-            return "AIM";
-            break;
-        }
-        case TurretStates::TARGET_LOCKED:
-        {
-            return "TARGET_LOCKED";
-            break;
-        }
-        case TurretStates::SPIN_UP_SHOOTER:
-        {
-            return "SPIN_UP_SHOOTER";
-            break;
-        }
-        case TurretStates::SHOOT:
-        {
-            return "SHOOT";
-            break;
-        }
+    case TurretStates::MANUAL:
+    {
+        return "MANUAL";
+        break;
+    }
+    case TurretStates::TRACKING:
+    {
+        return "TRACKING";
+        break;
+    }
+    case TurretStates::AIM:
+    {
+        return "AIM";
+        break;
+    }
+    case TurretStates::TARGET_LOCKED:
+    {
+        return "TARGET_LOCKED";
+        break;
+    }
+    case TurretStates::SPIN_UP_SHOOTER:
+    {
+        return "SPIN_UP_SHOOTER";
+        break;
+    }
+    case TurretStates::SHOOT:
+    {
+        return "SHOOT";
+        break;
+    }
     }
     return "INVALID";
 }
@@ -111,26 +115,23 @@ void publish_diagnostic_data()
 
 #define INCHES_TO_METERS 0.0254
 
-Motor * Turret_Shooter_Master;
-Motor * Turret_Shooter_Slave_Motor;
-Motor * Turret_Yaw_Motor;
-Motor * Turret_Hood_Motor;
+Motor *Turret_Shooter_Master;
+Motor *Turret_Shooter_Slave_Motor;
+Motor *Turret_Yaw_Motor;
+Motor *Turret_Hood_Motor;
 
 float get_angle_to_hub()
 {
     tf2::Stamped<tf2::Transform> robot_base_to_hub;
-   
-                        
+
     try
     {
         tf2::convert(tfBuffer.lookupTransform("base_link", "hub_link", ros::Time(0)), robot_base_to_hub);
         float theta;
         float x = robot_base_to_hub.getOrigin().getX();
         float y = robot_base_to_hub.getOrigin().getY();
-        theta = asin(y/sqrt(x * x + y * y));
+        theta = asin(y / sqrt(x * x + y * y));
         return theta;
-        
-
     }
 
     catch (...)
@@ -143,8 +144,7 @@ float get_angle_to_hub()
 float get_distance_to_hub()
 {
     tf2::Stamped<tf2::Transform> robot_base_to_hub;
-   
-                        
+
     try
     {
         tf2::convert(tfBuffer.lookupTransform("base_link", "hub_link", ros::Time(0)), robot_base_to_hub);
@@ -156,24 +156,20 @@ float get_distance_to_hub()
         ROS_WARN("Hub transform failed");
     }
     return 0;
-
 }
 
 float get_angle_to_hub_limelight()
 {
     tf2::Stamped<tf2::Transform> limelight_link_hub;
-   
-                        
+
     try
     {
         tf2::convert(tfBuffer.lookupTransform("base_link", "limelight_link_hub", ros::Time(0)), limelight_link_hub);
         float theta;
         float x = limelight_link_hub.getOrigin().getX();
         float y = limelight_link_hub.getOrigin().getY();
-        theta = asin(y/sqrt(x * x + y * y));
+        theta = asin(y / sqrt(x * x + y * y));
         return theta;
-        
-
     }
 
     catch (...)
@@ -186,12 +182,11 @@ float get_angle_to_hub_limelight()
 float get_distance_to_hub_limelight()
 {
     tf2::Stamped<tf2::Transform> limelight_link_hub;
-   
-                        
+
     try
     {
         tf2::convert(tfBuffer.lookupTransform("base_link", "limelight_link_hub", ros::Time(0)), limelight_link_hub);
-        return sqrt(pow(limelight_link_hub.getOrigin().getX() , 2) + pow(limelight_link_hub.getOrigin().getY() , 2));
+        return sqrt(pow(limelight_link_hub.getOrigin().getX(), 2) + pow(limelight_link_hub.getOrigin().getY(), 2));
     }
 
     catch (...)
@@ -199,31 +194,29 @@ float get_distance_to_hub_limelight()
         ROS_WARN("Hub transform failed");
     }
     return 0;
-
 }
 
 void turn_limelight_on()
 {
     static ros::Publisher limelight_control_pub = node->advertise<limelight_vision_node::Limelight_Control>("/LimelightControl", 5);
 
-	limelight_vision_node::Limelight limelight;
-	limelight.name = "limelight";
-	limelight.pipeline = 1;
+    limelight_vision_node::Limelight limelight;
+    limelight.name = "limelight";
+    limelight.pipeline = 1;
 
     limelight_vision_node::Limelight_Control limelight_control;
     limelight_control.limelights.push_back(limelight);
 
     limelight_control_pub.publish(limelight_control);
 }
-
 
 void turn_limelight_off()
 {
     static ros::Publisher limelight_control_pub = node->advertise<limelight_vision_node::Limelight_Control>("/LimelightControl", 5);
 
-	limelight_vision_node::Limelight limelight;
-	limelight.name = "limelight";
-	limelight.pipeline = 0;
+    limelight_vision_node::Limelight limelight;
+    limelight.name = "limelight";
+    limelight.pipeline = 0;
 
     limelight_vision_node::Limelight_Control limelight_control;
     limelight_control.limelights.push_back(limelight);
@@ -231,40 +224,34 @@ void turn_limelight_off()
     limelight_control_pub.publish(limelight_control);
 }
 
-void intake_status_callback(const intake_node::Intake_Status& msg)
+void intake_status_callback(const intake_node::Intake_Status &msg)
 {
-    (void) msg;
-
     readyToShoot = msg.readyToShoot;
 }
 
-void hmi_signal_callback(const hmi_agent_node::HMI_Signals& msg)
+void hmi_signal_callback(const hmi_agent_node::HMI_Signals &msg)
 {
-    (void) msg;
+    target_manual_hood_angle = msg.turret_hood_degrees;
+    target_manual_shooter_rpm = msg.turret_speed_rpm;
+    target_manual_yaw_angle = msg.turret_aim_degrees;
+    manual_control_enabled = msg.turret_manual;
 
-
-    //still needs to be updated
+    // still needs to be updated
 }
 
-
-void limelight_status_callback(const limelight_vision_node::Limelight_Status& msg)
+void limelight_status_callback(const limelight_vision_node::Limelight_Status &msg)
 {
-    (void) msg;
+    (void)msg;
 
     limelightHasTarget = msg.limelights[0].target_valid;
-    
 }
-
 
 bool reached_target_vel(float targetVel)
 {
-    
+
     return actualShooterRPM <= targetVel + 25 && actualShooterRPM >= targetVel - 25;
-    
 }
 
-
-   
 void set_hood_distance(float distance)
 {
     static InterpolatingMap<float, float> hood_lookup_table;
@@ -280,10 +267,8 @@ void set_hood_distance(float distance)
         first_time = false;
     }
     target_hood_angle = hood_lookup_table.lookup(distance);
-    Turret_Hood_Motor->set(Motor::Control_Mode::MOTION_MAGIC, target_hood_angle/360.0, 0);
-
+    Turret_Hood_Motor->set(Motor::Control_Mode::MOTION_MAGIC, target_hood_angle / 360.0, 0);
 }
-
 
 void set_shooter_vel(float distance)
 {
@@ -297,204 +282,200 @@ void set_shooter_vel(float distance)
     }
     target_shooter_rpm = shooter_rpm_lookup_table.lookup(distance);
     Turret_Shooter_Master->set(Motor::Control_Mode::VELOCITY, target_shooter_rpm, 0);
-
 }
-
 
 void turn_shooter_off()
 {
     Turret_Shooter_Master->set(Motor::Control_Mode::VELOCITY, 0, 0);
-
 }
 
-
-void set_turret_angle(float angle)
+void set_turret_angle(float angleDeg)
 {
-    target_yaw_angle = angle;
-    Turret_Yaw_Motor->set(Motor::Control_Mode::MOTION_MAGIC, angle/360.0, 0);
+    target_yaw_angle = angleDeg;
+    Turret_Yaw_Motor->set(Motor::Control_Mode::MOTION_MAGIC, angleDeg / 360.0, 0);
 }
 
-
-
-void step_state_machine() 
+void step_state_machine()
 {
     static ros::Time time_state_entered = ros::Time::now();
 
-	if(turret_state != next_turret_state)
-	{
-		time_state_entered = ros::Time::now();
-	}
+    if (manual_control_enabled)
+    {
+        next_turret_state = TurretStates::MANUAL;
+    }
 
-	ros::Duration time_in_state = ros::Time::now() - time_state_entered;
+    turret_state = next_turret_state;
+
+    if (turret_state != next_turret_state)
+    {
+        time_state_entered = ros::Time::now();
+    }
+
+    ros::Duration time_in_state = ros::Time::now() - time_state_entered;
 
     switch (turret_state)
     {
-        case TurretStates::MANUAL:
-        {
-            
-            break;
+    case TurretStates::MANUAL:
+    {
+        set_turret_angle(target_manual_yaw_angle);
+        Turret_Shooter_Master->set(Motor::Control_Mode::VELOCITY, target_manual_shooter_rpm, 0);
+        Turret_Hood_Motor->set(Motor::Control_Mode::MOTION_MAGIC, target_manual_hood_angle / 360.0, 0);
+        break;
 
-            //use operator controls to aim turret
-            
-        }
-        case TurretStates::TRACKING:
-        {
-            turn_limelight_off();
-            float distance = get_distance_to_hub();
-            float angle = get_angle_to_hub();
-            set_turret_angle(angle);
-            set_hood_distance(distance);
-            turn_shooter_off();
-
-            break;
-           
-            //aim turret
-            
-            //adjust hood
-        }
-        case TurretStates::AIM:
-        {
-            turn_limelight_on();
-            
-            float distance = get_distance_to_hub();
-            float angle = get_angle_to_hub();
-            set_turret_angle(angle);
-            set_hood_distance(distance);
-            turn_shooter_off();
-
-            break;
-            
-            //turn on limelight
-
-            //use limelight to aim
-
-            //set hood based on limelight
-
-            //spin up wheel
-        }
-        case TurretStates::TARGET_LOCKED:
-        {
-            turn_limelight_on();
-            
-            float distance = get_distance_to_hub_limelight();
-            float angle = get_angle_to_hub_limelight();
-            set_turret_angle(angle);
-            set_hood_distance(distance);
-            turn_shooter_off();
-
-            break;
-
-            
-        }
-        case TurretStates::SPIN_UP_SHOOTER:
-        {
-            
-            turn_limelight_on();
-            
-            float distance = get_distance_to_hub_limelight();
-            float angle = get_angle_to_hub_limelight();
-            set_turret_angle(angle);
-            set_hood_distance(distance);
-            set_shooter_vel(distance);
-
-            break;
-
-            //sets shooter vel
-        }
-        case TurretStates::SHOOT:
-        {
-            
-            turn_limelight_on();
-            
-            float distance = get_distance_to_hub_limelight();
-            float angle = get_angle_to_hub_limelight();
-            set_turret_angle(angle);
-            set_hood_distance(distance);
-            set_shooter_vel(distance);
-            static ros::Publisher intakeControlPublisher = node->advertise<intake_node::Intake_Control>("/IntakeControl" , 1);
-            intake_node::Intake_Control controlMsg;
-            controlMsg.command_shoot = true;
-            intakeControlPublisher.publish(controlMsg);
-
-              
-
-            break;
-
-            //shoot the ball
-        }
+        // use operator controls to aim turret
     }
+    case TurretStates::TRACKING:
+    {
+        turn_limelight_off();
+        float distance = get_distance_to_hub();
+        float angle = get_angle_to_hub();
+        set_turret_angle(angle);
+        set_hood_distance(distance);
+        turn_shooter_off();
 
+        break;
 
+        // aim turret
+
+        // adjust hood
+    }
+    case TurretStates::AIM:
+    {
+        turn_limelight_on();
+
+        float distance = get_distance_to_hub();
+        float angle = get_angle_to_hub();
+        set_turret_angle(angle);
+        set_hood_distance(distance);
+        turn_shooter_off();
+
+        break;
+
+        // turn on limelight
+
+        // use limelight to aim
+
+        // set hood based on limelight
+
+        // spin up wheel
+    }
+    case TurretStates::TARGET_LOCKED:
+    {
+        turn_limelight_on();
+
+        float distance = get_distance_to_hub_limelight();
+        float angle = get_angle_to_hub_limelight();
+        set_turret_angle(angle);
+        set_hood_distance(distance);
+        turn_shooter_off();
+
+        break;
+    }
+    case TurretStates::SPIN_UP_SHOOTER:
+    {
+
+        turn_limelight_on();
+
+        float distance = get_distance_to_hub_limelight();
+        float angle = get_angle_to_hub_limelight();
+        set_turret_angle(angle);
+        set_hood_distance(distance);
+        set_shooter_vel(distance);
+
+        break;
+
+        // sets shooter vel
+    }
+    case TurretStates::SHOOT:
+    {
+
+        turn_limelight_on();
+
+        float distance = get_distance_to_hub_limelight();
+        float angle = get_angle_to_hub_limelight();
+        set_turret_angle(angle);
+        set_hood_distance(distance);
+        set_shooter_vel(distance);
+        static ros::Publisher intakeControlPublisher = node->advertise<intake_node::Intake_Control>("/IntakeControl", 1);
+        intake_node::Intake_Control controlMsg;
+        controlMsg.command_shoot = true;
+        intakeControlPublisher.publish(controlMsg);
+
+        break;
+
+        // shoot the ball
+    }
+    }
 
     switch (turret_state)
     {
-        case TurretStates::MANUAL:
+    case TurretStates::MANUAL:
+    {
+        if (!manual_control_enabled)
         {
-
-            break;
-
-            //use operator controls to aim turret
-            
+            next_turret_state = TurretStates::TRACKING;
         }
-        case TurretStates::TRACKING:
-        {
-            if ( readyToShoot )
-            {
-                turret_state = TurretStates::AIM;
-            }
-            break;
-           
-            //aim turret
-            
-            //adjust hood
-        }
-        case TurretStates::AIM:
-        {
-            if ( limelightHasTarget )
-            {
-                turret_state = TurretStates::TARGET_LOCKED;
-            }
-            break;
-            
-            //turn on limelight
+        break;
 
-            //use limelight to aim
-
-            //set hood based on limelight
-
-            //spin up wheel
-        }
-        case TurretStates::TARGET_LOCKED:
-        {
-            turret_state = TurretStates::TARGET_LOCKED;
-
-            break;
-
-        }
-        case TurretStates::SPIN_UP_SHOOTER:
-        {
-            if (reached_target_vel(target_shooter_rpm) == true)
-            {
-                turret_state = TurretStates::SHOOT;
-            }
-           
-            break;
-
-            //sets shooter vel
-        }
-        case TurretStates::SHOOT:
-        {
-            if (time_in_state > ros::Duration(1))
-			{
-				turret_state = TurretStates::TRACKING;
-			}
-
-            break;
-
-            //shoot the ball
-        }
+        // use operator controls to aim turret
     }
-        ROS_INFO("Turret state: %d", (int) turret_state);
+    case TurretStates::TRACKING:
+    {
+        if (readyToShoot)
+        {
+            next_turret_state = TurretStates::AIM;
+        }
+        break;
+
+        // aim turret
+
+        // adjust hood
+    }
+    case TurretStates::AIM:
+    {
+        if (limelightHasTarget)
+        {
+            next_turret_state = TurretStates::TARGET_LOCKED;
+        }
+        break;
+
+        // turn on limelight
+
+        // use limelight to aim
+
+        // set hood based on limelight
+
+        // spin up wheel
+    }
+    case TurretStates::TARGET_LOCKED:
+    {
+        next_turret_state = TurretStates::TARGET_LOCKED;
+
+        break;
+    }
+    case TurretStates::SPIN_UP_SHOOTER:
+    {
+        if (reached_target_vel(target_shooter_rpm) == true)
+        {
+            next_turret_state = TurretStates::SHOOT;
+        }
+
+        break;
+
+        // sets shooter vel
+    }
+    case TurretStates::SHOOT:
+    {
+        if (time_in_state > ros::Duration(1))
+        {
+            next_turret_state = TurretStates::TRACKING;
+        }
+
+        break;
+
+        // shoot the ball
+    }
+    }
 }
 
 void config_motors()
@@ -511,6 +492,10 @@ void config_motors()
     Turret_Yaw_Motor->config().set_motion_cruise_velocity(16000);
     Turret_Yaw_Motor->config().set_motion_acceleration(36000);
     Turret_Yaw_Motor->config().set_motion_s_curve_strength(5);
+    Turret_Yaw_Motor->config().set_forward_soft_limit(0.5);
+    Turret_Yaw_Motor->config().set_forward_soft_limit_enable(true);
+    Turret_Yaw_Motor->config().set_reverse_soft_limit(-0.5);
+    Turret_Yaw_Motor->config().set_reverse_soft_limit_enable(true);
     Turret_Yaw_Motor->config().apply();
 
     Turret_Hood_Motor->config().set_kP(0.67);
@@ -520,6 +505,10 @@ void config_motors()
     Turret_Hood_Motor->config().set_motion_cruise_velocity(16000);
     Turret_Hood_Motor->config().set_motion_acceleration(32000);
     Turret_Hood_Motor->config().set_motion_s_curve_strength(5);
+    Turret_Hood_Motor->config().set_forward_soft_limit(25.0/360.0);
+    Turret_Hood_Motor->config().set_forward_soft_limit_enable(true);
+    Turret_Hood_Motor->config().set_reverse_soft_limit(0);
+    Turret_Hood_Motor->config().set_reverse_soft_limit_enable(true);
     Turret_Hood_Motor->config().apply();
 
     Turret_Shooter_Slave_Motor->config().set_follower(true, TURRET_SHOOTER_MASTER_CAN_ID);
@@ -535,18 +524,17 @@ void config_motors()
     Turret_Shooter_Master->config().apply();
 }
 
-
-void motor_status_callback(const rio_control_node::Motor_Status& msg)
+void motor_status_callback(const rio_control_node::Motor_Status &msg)
 {
-    (void) msg;
+    (void)msg;
     // double motor_rotations = 0;
     // bool found_motor = false;
 
-    for(std::vector<rio_control_node::Motor_Info>::const_iterator i = msg.motors.begin();
-        i != msg.motors.end();
-        i++)
+    for (std::vector<rio_control_node::Motor_Info>::const_iterator i = msg.motors.begin();
+         i != msg.motors.end();
+         i++)
     {
-        if((*i).id == TURRET_SHOOTER_MASTER_CAN_ID)
+        if ((*i).id == TURRET_SHOOTER_MASTER_CAN_ID)
         {
             actualShooterRPM = (*i).sensor_velocity;
         }
@@ -575,13 +563,11 @@ void motor_status_callback(const rio_control_node::Motor_Status& msg)
     // }
 }
 
-
-
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv, "turret_node");
-	ros::NodeHandle n;
-	node = &n;
+    ros::init(argc, argv, "turret_node");
+    ros::NodeHandle n;
+    node = &n;
 
     config_motors();
 
@@ -592,14 +578,11 @@ int main(int argc, char **argv)
 
     action_helper = new ActionHelper(node);
 
-	tfBroadcaster = new tf2_ros::TransformBroadcaster();
+    tfBroadcaster = new tf2_ros::TransformBroadcaster();
 
-    
-
-    
     tfListener = new tf2_ros::TransformListener(tfBuffer);
     ros::Rate rate(100);
-    while(ros::ok())
+    while (ros::ok())
     {
         ros::spinOnce();
 
@@ -608,5 +591,5 @@ int main(int argc, char **argv)
         rate.sleep();
     }
 
-	return 0;
+    return 0;
 }
