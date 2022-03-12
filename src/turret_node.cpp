@@ -2,6 +2,7 @@
 #include "std_msgs/String.h"
 #include "ck_utilities/Motor.hpp"
 #include "ck_utilities/InterpolatingMap.hpp"
+#include "ck_utilities/CKMath.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2/LinearMath/Quaternion.h"
@@ -47,11 +48,17 @@ enum class TurretStates
     SHOOT,
 };
 
+static constexpr float SHOOTER_RPM_DELTA = 50;
+static constexpr float HOOD_DEG_DELTA = 1;
+static constexpr float TURRET_YAW_DEG_DELTA = 2;
+
 static TurretStates turret_state = TurretStates::TRACKING;
 static TurretStates next_turret_state = TurretStates::TRACKING;
 static bool readyToShoot = false;
 static bool limelightHasTarget = false;
 static float actualShooterRPM = 0;
+static float actualTurretYawDeg = 0;
+static float actualHoodDeg = 0;
 static float target_shooter_rpm = 0;
 static float target_hood_angle = 0;
 static float target_yaw_angle = 0;
@@ -241,15 +248,22 @@ void hmi_signal_callback(const hmi_agent_node::HMI_Signals &msg)
 
 void limelight_status_callback(const limelight_vision_node::Limelight_Status &msg)
 {
-    (void)msg;
-
     limelightHasTarget = msg.limelights[0].target_valid;
 }
 
 bool reached_target_vel(float targetVel)
 {
+    return ck::math::inRange(targetVel - actualShooterRPM, SHOOTER_RPM_DELTA);
+}
 
-    return actualShooterRPM <= targetVel + 25 && actualShooterRPM >= targetVel - 25;
+bool reached_target_hood_deg(float targetHoodDeg)
+{
+    return ck::math::inRange(targetHoodDeg - actualHoodDeg, HOOD_DEG_DELTA);
+}
+
+bool reached_target_turret_yaw_deg(float targetTurretYawDeg)
+{
+    return ck::math::inRange(targetTurretYawDeg - actualTurretYawDeg, TURRET_YAW_DEG_DELTA);
 }
 
 void set_hood_distance(float distance)
@@ -298,6 +312,9 @@ void set_turret_angle(float angleDeg)
 void step_state_machine()
 {
     static ros::Time time_state_entered = ros::Time::now();
+    static ros::Publisher intakeControlPublisher = node->advertise<intake_node::Intake_Control>("/IntakeControl", 1);
+    intake_node::Intake_Control controlMsg;
+    controlMsg.command_shoot = false;
 
     if (manual_control_enabled)
     {
@@ -367,7 +384,7 @@ void step_state_machine()
         float angle = get_angle_to_hub_limelight();
         set_turret_angle(angle);
         set_hood_distance(distance);
-        turn_shooter_off();
+        set_shooter_vel(distance);
 
         break;
     }
@@ -396,11 +413,7 @@ void step_state_machine()
         set_turret_angle(angle);
         set_hood_distance(distance);
         set_shooter_vel(distance);
-        static ros::Publisher intakeControlPublisher = node->advertise<intake_node::Intake_Control>("/IntakeControl", 1);
-        intake_node::Intake_Control controlMsg;
         controlMsg.command_shoot = true;
-        intakeControlPublisher.publish(controlMsg);
-
         break;
 
         // shoot the ball
@@ -449,13 +462,16 @@ void step_state_machine()
     }
     case TurretStates::TARGET_LOCKED:
     {
-        next_turret_state = TurretStates::TARGET_LOCKED;
+        if (reached_target_hood_deg(target_hood_angle) && reached_target_turret_yaw_deg(target_yaw_angle))
+        {
+            next_turret_state = TurretStates::SPIN_UP_SHOOTER;
+        }
 
         break;
     }
     case TurretStates::SPIN_UP_SHOOTER:
     {
-        if (reached_target_vel(target_shooter_rpm) == true)
+        if (reached_target_vel(target_shooter_rpm))
         {
             next_turret_state = TurretStates::SHOOT;
         }
@@ -476,6 +492,8 @@ void step_state_machine()
         // shoot the ball
     }
     }
+
+    intakeControlPublisher.publish(controlMsg);
 }
 
 void config_motors()
@@ -529,15 +547,29 @@ void motor_status_callback(const rio_control_node::Motor_Status &msg)
     (void)msg;
     // double motor_rotations = 0;
     // bool found_motor = false;
+    static std::map<uint8_t, rio_control_node::Motor_Info> motorInfoMap;
+    motorInfoMap.clear();
 
     for (std::vector<rio_control_node::Motor_Info>::const_iterator i = msg.motors.begin();
          i != msg.motors.end();
          i++)
     {
-        if ((*i).id == TURRET_SHOOTER_MASTER_CAN_ID)
-        {
-            actualShooterRPM = (*i).sensor_velocity;
-        }
+        motorInfoMap[(*i).id] = (*i);
+    }
+
+    if (motorInfoMap.count(TURRET_SHOOTER_MASTER_CAN_ID))
+    {
+        actualShooterRPM = motorInfoMap[TURRET_SHOOTER_MASTER_CAN_ID].sensor_velocity;
+    }
+
+    if (motorInfoMap.count(TURRET_HOOD_CAN_ID))
+    {
+        actualHoodDeg = motorInfoMap[TURRET_HOOD_CAN_ID].sensor_position;
+    }
+
+    if (motorInfoMap.count(TURRET_YAW_CAN_ID))
+    {
+        actualTurretYawDeg = motorInfoMap[TURRET_YAW_CAN_ID].sensor_position;
     }
 
     // if(found_motor)
