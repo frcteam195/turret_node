@@ -306,6 +306,12 @@ void turn_shooter_off()
 void set_turret_angle(float angleDeg)
 {
     target_yaw_angle = angleDeg;
+    target_yaw_angle += 180;
+    while(target_yaw_angle > 360.0)
+    {
+        target_yaw_angle -= 360.0;
+    }
+    target_yaw_angle -= 180;
     Turret_Yaw_Motor->set(Motor::Control_Mode::MOTION_MAGIC, angleDeg / 360.0, 0);
 }
 
@@ -510,9 +516,9 @@ void config_motors()
     Turret_Yaw_Motor->config().set_motion_cruise_velocity(16000);
     Turret_Yaw_Motor->config().set_motion_acceleration(36000);
     Turret_Yaw_Motor->config().set_motion_s_curve_strength(5);
-    Turret_Yaw_Motor->config().set_forward_soft_limit(0.5);
+    Turret_Yaw_Motor->config().set_forward_soft_limit(0.9);
     Turret_Yaw_Motor->config().set_forward_soft_limit_enable(true);
-    Turret_Yaw_Motor->config().set_reverse_soft_limit(-0.5);
+    Turret_Yaw_Motor->config().set_reverse_soft_limit(-0.9);
     Turret_Yaw_Motor->config().set_reverse_soft_limit_enable(true);
     Turret_Yaw_Motor->config().apply();
 
@@ -618,8 +624,8 @@ int main(int argc, char **argv)
     {
         ros::spinOnce();
 
-        // step_state_machine();
-        Turret_Shooter_Master->set(Motor::Control_Mode::VELOCITY, 1500, 0);
+        step_state_machine();
+        // Turret_Shooter_Master->set(Motor::Control_Mode::VELOCITY, 1500, 0);
         publish_diagnostic_data();
 
         rate.sleep();
