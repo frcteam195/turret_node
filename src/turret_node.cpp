@@ -138,7 +138,7 @@ float get_angle_to_hub()
         float x = robot_base_to_hub.getOrigin().getX();
         float y = robot_base_to_hub.getOrigin().getY();
         theta = asin(y / sqrt(x * x + y * y));
-        return theta;
+        return theta * 180.0 / M_PI;
     }
 
     catch (...)
@@ -618,7 +618,9 @@ int main(int argc, char **argv)
     {
         ros::spinOnce();
 
-        step_state_machine();
+        // step_state_machine();
+        Turret_Shooter_Master->set(Motor::Control_Mode::VELOCITY, 1500, 0);
+        publish_diagnostic_data();
 
         rate.sleep();
     }
