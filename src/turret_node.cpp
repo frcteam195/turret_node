@@ -8,6 +8,7 @@
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2/LinearMath/Transform.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "geometry_msgs/PoseStamped.h"
 #include "limelight_vision_node/Limelight_Status.h"
 #include "limelight_vision_node/Limelight_Control.h"
 #include "hmi_agent/ActionNames.hpp"
@@ -105,21 +106,6 @@ std::string turret_state_to_string(TurretStates state)
     return "INVALID";
 }
 
-void publish_diagnostic_data()
-{
-    static ros::Publisher diagnostic_publisher = node->advertise<turret_node::turret_diagnostics>("/TurretNodeDiagnostics", 1);
-    turret_node::turret_diagnostics diagnostics;
-    diagnostics.turret_state = turret_state_to_string(turret_state);
-    diagnostics.next_turret_state = turret_state_to_string(next_turret_state);
-    diagnostics.actualShooterRPM = actualShooterRPM;
-    diagnostics.limelightHasTarget = limelightHasTarget;
-    diagnostics.readyToShoot = readyToShoot;
-    diagnostics.target_hood_angle = target_hood_angle;
-    diagnostics.target_shooter_rpm = target_shooter_rpm;
-    diagnostics.target_yaw_angle = target_yaw_angle;
-    diagnostic_publisher.publish(diagnostics);
-}
-
 #define INCHES_TO_METERS 0.0254
 
 Motor *Turret_Shooter_Master;
@@ -137,7 +123,7 @@ float get_angle_to_hub()
         float theta;
         float x = robot_base_to_hub.getOrigin().getX();
         float y = robot_base_to_hub.getOrigin().getY();
-        theta = asin(y / sqrt(x * x + y * y));
+        theta = atan2(y, x);
         return theta * 180.0 / M_PI;
     }
 
@@ -175,7 +161,7 @@ float get_angle_to_hub_limelight()
         float theta;
         float x = limelight_link_hub.getOrigin().getX();
         float y = limelight_link_hub.getOrigin().getY();
-        theta = asin(y / sqrt(x * x + y * y));
+        theta = atan2(y, x);
         return theta;
     }
 
@@ -601,6 +587,52 @@ void motor_status_callback(const rio_control_node::Motor_Status &msg)
     // }
 }
 
+void publish_pose(ros::Publisher publisher, float angle)
+{
+    geometry_msgs::PoseStamped pose;
+    pose.header.frame_id = "base_link";
+    pose.header.stamp = ros::Time::now();
+
+    pose.pose.position.x = 0;
+    pose.pose.position.y = 0;
+    pose.pose.position.z = 0;
+
+    tf2::Quaternion q;
+    q.setRPY(0,0,angle * M_PI / 180.0);
+
+    pose.pose.orientation.w = q.getW();
+    pose.pose.orientation.x = q.getX();
+    pose.pose.orientation.y = q.getY();
+    pose.pose.orientation.z = q.getZ();
+
+    publisher.publish(pose);
+
+}
+
+void publish_diagnostic_data()
+{
+    static ros::Publisher diagnostic_publisher = node->advertise<turret_node::turret_diagnostics>("/TurretNodeDiagnostics", 1);
+    turret_node::turret_diagnostics diagnostics;
+    diagnostics.turret_state = turret_state_to_string(turret_state);
+    diagnostics.next_turret_state = turret_state_to_string(next_turret_state);
+    diagnostics.actualShooterRPM = actualShooterRPM;
+    diagnostics.limelightHasTarget = limelightHasTarget;
+    diagnostics.readyToShoot = readyToShoot;
+    diagnostics.target_hood_angle = target_hood_angle;
+    diagnostics.target_shooter_rpm = target_shooter_rpm;
+    diagnostics.target_yaw_angle = target_yaw_angle;
+    diagnostic_publisher.publish(diagnostics);
+
+    float odometry_angle = get_angle_to_hub();
+    float limelight_angle = get_angle_to_hub_limelight();
+
+    static ros::Publisher odometry_angle_publisher = node->advertise<geometry_msgs::PoseStamped>("/odometry_hub_angle", 1);
+    static ros::Publisher limelight_angle_publisher = node->advertise<geometry_msgs::PoseStamped>("/limelight_hub_angle", 1);
+
+    publish_pose (odometry_angle_publisher, odometry_angle);
+    publish_pose (limelight_angle_publisher, limelight_angle);
+}
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "turret_node");
@@ -625,7 +657,7 @@ int main(int argc, char **argv)
         ros::spinOnce();
 
         step_state_machine();
-        // Turret_Shooter_Master->set(Motor::Control_Mode::VELOCITY, 1500, 0);
+        // Turret_Shooter_Master->set(Motor::Control_Mode::VELOCITY, 3000, 0);
         publish_diagnostic_data();
 
         rate.sleep();
