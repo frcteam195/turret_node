@@ -660,8 +660,8 @@ int main(int argc, char **argv)
     {
         ros::spinOnce();
 
-        step_state_machine();
-        // Turret_Shooter_Master->set(Motor::Control_Mode::VELOCITY, 3000, 0);
+        // step_state_machine();
+        Turret_Shooter_Master->set(Motor::Control_Mode::VELOCITY, 3000, 0);
         publish_diagnostic_data();
 
         rate.sleep();
