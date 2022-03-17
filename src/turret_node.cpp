@@ -264,12 +264,10 @@ void set_hood_distance(float distance)
     static bool first_time = true;
     if (first_time)
     {
-        hood_lookup_table.insert(0, 10);
-        hood_lookup_table.insert(1, 10);
-        hood_lookup_table.insert(3, 10);
-        hood_lookup_table.insert(4, 10);
-        hood_lookup_table.insert(5, 10);
-        hood_lookup_table.insert(10, 10);
+        hood_lookup_table.insert(2.75, 7.3);
+        hood_lookup_table.insert(3.026, 9.82);
+        hood_lookup_table.insert(3.88, 12.7);
+        hood_lookup_table.insert(5.176, 17.67);
         first_time = false;
     }
     target_hood_angle = hood_lookup_table.lookup(distance);
@@ -282,8 +280,10 @@ void set_shooter_vel(float distance)
     static bool first_time = true;
     if (first_time)
     {
-        shooter_rpm_lookup_table.insert(0, 3000);
-        shooter_rpm_lookup_table.insert(40, 3000);
+        shooter_rpm_lookup_table.insert(2.75, 1335);
+        shooter_rpm_lookup_table.insert(3.026, 1325);
+        shooter_rpm_lookup_table.insert(3.88, 1425);
+        shooter_rpm_lookup_table.insert(5.176, 1750);
         first_time = false;
     }
     target_shooter_rpm = shooter_rpm_lookup_table.lookup(distance);
@@ -541,14 +541,16 @@ void config_motors()
     Turret_Shooter_Slave_Motor->config().set_follower(true, TURRET_SHOOTER_MASTER_CAN_ID);
     Turret_Shooter_Slave_Motor->config().set_inverted(true);
     Turret_Shooter_Slave_Motor->config().set_supply_current_limit(true, 40, 20, 1);
+    Turret_Shooter_Slave_Motor->config().set_closed_loop_ramp(0.25);
+    Turret_Shooter_Slave_Motor->config().set_peak_output_reverse(-0.5);
     Turret_Shooter_Slave_Motor->config().apply();
 
-    Turret_Shooter_Master->config().set_kP(0.14);
+    Turret_Shooter_Master->config().set_kP(0.023);
     Turret_Shooter_Master->config().set_kI(0.0);
-    Turret_Shooter_Master->config().set_kD(3.5);
-    Turret_Shooter_Master->config().set_kF(0.0505);
-    Turret_Shooter_Master->config().set_closed_loop_ramp(2.5);
-    Turret_Shooter_Master->config().set_peak_output_reverse(0.3);
+    Turret_Shooter_Master->config().set_kD(1);
+    Turret_Shooter_Master->config().set_kF(0.0466);
+    Turret_Shooter_Master->config().set_closed_loop_ramp(0.25);
+    Turret_Shooter_Master->config().set_peak_output_reverse(-0.5);
     Turret_Shooter_Master->config().set_supply_current_limit(true, 40, 20, 1);
     Turret_Shooter_Master->config().apply();
 }
@@ -640,6 +642,14 @@ void publish_diagnostic_data()
     diagnostics.target_shooter_offset = target_vel_offset;
     diagnostics.target_hood_offset = target_hood_offset;
     diagnostics.target_yaw_offset = target_yaw_offset;
+    if(limelightHasTarget)
+    {
+        diagnostics.robot_distance = get_distance_to_hub_limelight();
+    }
+    else
+    {
+        diagnostics.robot_distance = get_distance_to_hub();
+    }
     diagnostic_publisher.publish(diagnostics);
 
     float odometry_angle = get_angle_to_hub();
@@ -676,7 +686,6 @@ int main(int argc, char **argv)
         ros::spinOnce();
 
         step_state_machine();
-        // Turret_Shooter_Master->set(Motor::Control_Mode::VELOCITY, 3000, 0);
         publish_diagnostic_data();
 
         rate.sleep();

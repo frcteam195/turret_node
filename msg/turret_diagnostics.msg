@@ -2,6 +2,7 @@ string turret_state
 string next_turret_state
 bool readyToShoot
 bool limelightHasTarget
+float32 robot_distance
 float32 actualShooterRPM
 float32 target_shooter_rpm
 float32 target_hood_angle
