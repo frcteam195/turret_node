@@ -162,7 +162,7 @@ float get_angle_to_hub_limelight()
         float x = limelight_link_hub.getOrigin().getX();
         float y = limelight_link_hub.getOrigin().getY();
         theta = atan2(y, x);
-        return theta;
+        return theta * 180.0 / M_PI;
     }
 
     catch (...)
@@ -237,18 +237,24 @@ void limelight_status_callback(const limelight_vision_node::Limelight_Status &ms
     limelightHasTarget = msg.limelights[0].target_valid;
 }
 
+static float target_vel_offset = 0;
+static float target_hood_offset = 0;
+static float target_yaw_offset = 0;
 bool reached_target_vel(float targetVel)
 {
+    target_vel_offset = fabs(targetVel - actualShooterRPM);
     return ck::math::inRange(targetVel - actualShooterRPM, SHOOTER_RPM_DELTA);
 }
 
 bool reached_target_hood_deg(float targetHoodDeg)
 {
+    target_hood_offset = fabs(targetHoodDeg - actualHoodDeg);
     return ck::math::inRange(targetHoodDeg - actualHoodDeg, HOOD_DEG_DELTA);
 }
 
 bool reached_target_turret_yaw_deg(float targetTurretYawDeg)
 {
+    target_yaw_offset = fabs(targetTurretYawDeg - actualTurretYawDeg);
     return ck::math::inRange(targetTurretYawDeg - actualTurretYawDeg, TURRET_YAW_DEG_DELTA);
 }
 
@@ -258,12 +264,12 @@ void set_hood_distance(float distance)
     static bool first_time = true;
     if (first_time)
     {
-        hood_lookup_table.insert(0, 100);
-        hood_lookup_table.insert(1, 200);
-        hood_lookup_table.insert(3, 300);
-        hood_lookup_table.insert(4, 800);
-        hood_lookup_table.insert(5, 1200);
-        hood_lookup_table.insert(10, 0);
+        hood_lookup_table.insert(0, 10);
+        hood_lookup_table.insert(1, 10);
+        hood_lookup_table.insert(3, 10);
+        hood_lookup_table.insert(4, 10);
+        hood_lookup_table.insert(5, 10);
+        hood_lookup_table.insert(10, 10);
         first_time = false;
     }
     target_hood_angle = hood_lookup_table.lookup(distance);
@@ -276,8 +282,8 @@ void set_shooter_vel(float distance)
     static bool first_time = true;
     if (first_time)
     {
-        shooter_rpm_lookup_table.insert(0, 5000);
-        shooter_rpm_lookup_table.insert(40, 5000);
+        shooter_rpm_lookup_table.insert(0, 3000);
+        shooter_rpm_lookup_table.insert(40, 3000);
         first_time = false;
     }
     target_shooter_rpm = shooter_rpm_lookup_table.lookup(distance);
@@ -371,9 +377,15 @@ void step_state_machine()
     case TurretStates::TARGET_LOCKED:
     {
         turn_limelight_on();
+        float distance = get_distance_to_hub();
+        float angle = get_angle_to_hub();
 
-        float distance = get_distance_to_hub_limelight();
-        float angle = get_angle_to_hub_limelight();
+        if(limelightHasTarget)
+        {
+            distance = get_distance_to_hub_limelight();
+            angle = get_angle_to_hub_limelight();
+        }
+        
         set_turret_angle(angle);
         set_hood_distance(distance);
         set_shooter_vel(distance);
@@ -454,7 +466,7 @@ void step_state_machine()
     }
     case TurretStates::TARGET_LOCKED:
     {
-        if (reached_target_hood_deg(target_hood_angle) && reached_target_turret_yaw_deg(target_yaw_angle))
+        if (reached_target_hood_deg(target_hood_angle) && reached_target_turret_yaw_deg(target_yaw_angle) && limelightHasTarget)
         {
             next_turret_state = TurretStates::SPIN_UP_SHOOTER;
         }
@@ -463,7 +475,7 @@ void step_state_machine()
     }
     case TurretStates::SPIN_UP_SHOOTER:
     {
-        if (reached_target_vel(target_shooter_rpm))
+        if (reached_target_vel(target_shooter_rpm) && reached_target_hood_deg(target_hood_angle) && reached_target_turret_yaw_deg(target_yaw_angle) && limelightHasTarget )
         {
             next_turret_state = TurretStates::SHOOT;
         }
@@ -495,9 +507,9 @@ void config_motors()
     Turret_Yaw_Motor = new Motor(TURRET_YAW_CAN_ID, Motor::Motor_Type::TALON_FX);
     Turret_Hood_Motor = new Motor(TURRET_HOOD_CAN_ID, Motor::Motor_Type::TALON_FX);
 
-    Turret_Yaw_Motor->config().set_kP(0.67);
+    Turret_Yaw_Motor->config().set_kP(0.08);
     Turret_Yaw_Motor->config().set_kI(0.0);
-    Turret_Yaw_Motor->config().set_kD(0.92);
+    Turret_Yaw_Motor->config().set_kD(0);
     Turret_Yaw_Motor->config().set_kF(0.047651);
     Turret_Yaw_Motor->config().set_motion_cruise_velocity(16000);
     Turret_Yaw_Motor->config().set_motion_acceleration(36000);
@@ -506,6 +518,7 @@ void config_motors()
     Turret_Yaw_Motor->config().set_forward_soft_limit_enable(true);
     Turret_Yaw_Motor->config().set_reverse_soft_limit(-0.9);
     Turret_Yaw_Motor->config().set_reverse_soft_limit_enable(true);
+    Turret_Yaw_Motor->config().set_closed_loop_ramp(0.25);
     Turret_Yaw_Motor->config().set_supply_current_limit(true, 25, 0, 0);
     Turret_Yaw_Motor->config().apply();
 
@@ -521,6 +534,7 @@ void config_motors()
     Turret_Hood_Motor->config().set_reverse_soft_limit(0);
     Turret_Hood_Motor->config().set_reverse_soft_limit_enable(true);
     Turret_Hood_Motor->config().set_supply_current_limit(true, 15, 0, 0);
+    Turret_Hood_Motor->config().set_inverted(true);
     Turret_Hood_Motor->config().apply();
 
     Turret_Shooter_Slave_Motor->config().set_follower(true, TURRET_SHOOTER_MASTER_CAN_ID);
@@ -530,7 +544,7 @@ void config_motors()
 
     Turret_Shooter_Master->config().set_kP(0.14);
     Turret_Shooter_Master->config().set_kI(0.0);
-    Turret_Shooter_Master->config().set_kD(7.4);
+    Turret_Shooter_Master->config().set_kD(3.5);
     Turret_Shooter_Master->config().set_kF(0.0505);
     Turret_Shooter_Master->config().set_closed_loop_ramp(2.5);
     Turret_Shooter_Master->config().set_peak_output_reverse(0.3);
@@ -560,35 +574,32 @@ void motor_status_callback(const rio_control_node::Motor_Status &msg)
 
     if (motorInfoMap.count(TURRET_HOOD_CAN_ID))
     {
-        actualHoodDeg = motorInfoMap[TURRET_HOOD_CAN_ID].sensor_position;
+        actualHoodDeg = motorInfoMap[TURRET_HOOD_CAN_ID].sensor_position * 360;
     }
 
     if (motorInfoMap.count(TURRET_YAW_CAN_ID))
     {
-        actualTurretYawDeg = motorInfoMap[TURRET_YAW_CAN_ID].sensor_position;
+        actualTurretYawDeg = motorInfoMap[TURRET_YAW_CAN_ID].sensor_position * 360;
+        
+        geometry_msgs::TransformStamped transformStamped;
+
+        transformStamped.header.stamp = ros::Time::now();
+        transformStamped.header.frame_id = "base_link";
+        transformStamped.child_frame_id = "turret_link";
+
+        transformStamped.transform.translation.x = 0;
+        transformStamped.transform.translation.y = 0;
+        transformStamped.transform.translation.z = 14 * INCHES_TO_METERS;
+
+        tf2::Quaternion q;
+        q.setRPY(0, 0, motorInfoMap[TURRET_YAW_CAN_ID].sensor_position * 2.0 * M_PI);
+        transformStamped.transform.rotation.x = q.x();
+        transformStamped.transform.rotation.y = q.y();
+        transformStamped.transform.rotation.z = q.z();
+        transformStamped.transform.rotation.w = q.w();
+
+        tfBroadcaster->sendTransform(transformStamped);
     }
-
-    // if(found_motor)
-    // {
-    //     geometry_msgs::TransformStamped transformStamped;
-
-    //     transformStamped.header.stamp = ros::Time::now();
-    //     transformStamped.header.frame_id = "base_link";
-    //     transformStamped.child_frame_id = "turret_link";
-
-    //     transformStamped.transform.translation.x = 0;
-    //     transformStamped.transform.translation.y = 0;
-    //     transformStamped.transform.translation.z = 14 * INCHES_TO_METERS;
-
-    //     tf2::Quaternion q;
-    //     q.setRPY(0, 0, motor_rotations * 2.0 * M_PI);
-    //     transformStamped.transform.rotation.x = q.x();
-    //     transformStamped.transform.rotation.y = q.y();
-    //     transformStamped.transform.rotation.z = q.z();
-    //     transformStamped.transform.rotation.w = q.w();
-
-    //     tfBroadcaster->sendTransform(transformStamped);
-    // }
 }
 
 void publish_pose(ros::Publisher publisher, float angle)
@@ -625,6 +636,9 @@ void publish_diagnostic_data()
     diagnostics.target_hood_angle = target_hood_angle;
     diagnostics.target_shooter_rpm = target_shooter_rpm;
     diagnostics.target_yaw_angle = target_yaw_angle;
+    diagnostics.target_shooter_offset = target_vel_offset;
+    diagnostics.target_hood_offset = target_hood_offset;
+    diagnostics.target_yaw_offset = target_yaw_offset;
     diagnostic_publisher.publish(diagnostics);
 
     float odometry_angle = get_angle_to_hub();
@@ -660,7 +674,7 @@ int main(int argc, char **argv)
     {
         ros::spinOnce();
 
-        // step_state_machine();
+        step_state_machine();
         // Turret_Shooter_Master->set(Motor::Control_Mode::VELOCITY, 3000, 0);
         publish_diagnostic_data();
 

@@ -6,3 +6,6 @@ float32 actualShooterRPM
 float32 target_shooter_rpm
 float32 target_hood_angle
 float32 target_yaw_angle
+float32 target_shooter_offset
+float32 target_hood_offset
+float32 target_yaw_offset
