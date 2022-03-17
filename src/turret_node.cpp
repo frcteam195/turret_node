@@ -507,12 +507,12 @@ void config_motors()
     Turret_Yaw_Motor = new Motor(TURRET_YAW_CAN_ID, Motor::Motor_Type::TALON_FX);
     Turret_Hood_Motor = new Motor(TURRET_HOOD_CAN_ID, Motor::Motor_Type::TALON_FX);
 
-    Turret_Yaw_Motor->config().set_kP(0.08);
+    Turret_Yaw_Motor->config().set_kP(2.6);
     Turret_Yaw_Motor->config().set_kI(0.0);
-    Turret_Yaw_Motor->config().set_kD(0);
-    Turret_Yaw_Motor->config().set_kF(0.047651);
-    Turret_Yaw_Motor->config().set_motion_cruise_velocity(16000);
-    Turret_Yaw_Motor->config().set_motion_acceleration(36000);
+    Turret_Yaw_Motor->config().set_kD(320.0);
+    Turret_Yaw_Motor->config().set_kF(0.164611);
+    Turret_Yaw_Motor->config().set_motion_cruise_velocity(4700);
+    Turret_Yaw_Motor->config().set_motion_acceleration(8000);
     Turret_Yaw_Motor->config().set_motion_s_curve_strength(5);
     Turret_Yaw_Motor->config().set_forward_soft_limit(0.9);
     Turret_Yaw_Motor->config().set_forward_soft_limit_enable(true);
@@ -522,24 +522,25 @@ void config_motors()
     Turret_Yaw_Motor->config().set_supply_current_limit(true, 25, 0, 0);
     Turret_Yaw_Motor->config().apply();
 
-    Turret_Hood_Motor->config().set_kP(0.67);
+    Turret_Hood_Motor->config().set_kP(0.8);
     Turret_Hood_Motor->config().set_kI(0.0);
-    Turret_Hood_Motor->config().set_kD(0.92);
+    Turret_Hood_Motor->config().set_kD(120);
     Turret_Hood_Motor->config().set_kF(0.047651);
-    Turret_Hood_Motor->config().set_motion_cruise_velocity(16000);
+    Turret_Hood_Motor->config().set_motion_cruise_velocity(10000);
     Turret_Hood_Motor->config().set_motion_acceleration(32000);
     Turret_Hood_Motor->config().set_motion_s_curve_strength(5);
-    Turret_Hood_Motor->config().set_forward_soft_limit(25.0/360.0);
+    Turret_Hood_Motor->config().set_forward_soft_limit(21.0/360.0);
     Turret_Hood_Motor->config().set_forward_soft_limit_enable(true);
     Turret_Hood_Motor->config().set_reverse_soft_limit(0);
     Turret_Hood_Motor->config().set_reverse_soft_limit_enable(true);
-    Turret_Hood_Motor->config().set_supply_current_limit(true, 15, 0, 0);
+    Turret_Hood_Motor->config().set_supply_current_limit(true, 5, 0, 0);
     Turret_Hood_Motor->config().set_inverted(true);
+    Turret_Hood_Motor->config().set_closed_loop_ramp(0.25);
     Turret_Hood_Motor->config().apply();
 
     Turret_Shooter_Slave_Motor->config().set_follower(true, TURRET_SHOOTER_MASTER_CAN_ID);
     Turret_Shooter_Slave_Motor->config().set_inverted(true);
-    Turret_Shooter_Slave_Motor->config().set_supply_current_limit(true, 40, 0, 0);
+    Turret_Shooter_Slave_Motor->config().set_supply_current_limit(true, 40, 20, 1);
     Turret_Shooter_Slave_Motor->config().apply();
 
     Turret_Shooter_Master->config().set_kP(0.14);
@@ -548,7 +549,7 @@ void config_motors()
     Turret_Shooter_Master->config().set_kF(0.0505);
     Turret_Shooter_Master->config().set_closed_loop_ramp(2.5);
     Turret_Shooter_Master->config().set_peak_output_reverse(0.3);
-    Turret_Shooter_Master->config().set_supply_current_limit(true, 40, 0, 0);
+    Turret_Shooter_Master->config().set_supply_current_limit(true, 40, 20, 1);
     Turret_Shooter_Master->config().apply();
 }
 
