@@ -16,6 +16,7 @@
 #include "intake_node/Intake_Control.h"
 #include "intake_node/Intake_Status.h"
 #include "turret_node/turret_diagnostics.h"
+#include "turret_node/turret_status.h"
 #include <thread>
 #include <string>
 #include <mutex>
@@ -52,7 +53,7 @@ enum class TurretStates
 static constexpr float SHOOTER_RPM_DELTA = 50;
 static constexpr float HOOD_DEG_DELTA = 1;
 static constexpr float TURRET_YAW_DEG_DELTA = 2;
-static constexpr float SHOOTER_RPM_FILTER_TIME = 0.3;
+static constexpr float SHOOTER_RPM_FILTER_TIME = 0.4;
 
 static TurretStates turret_state = TurretStates::TRACKING;
 static TurretStates next_turret_state = TurretStates::TRACKING;
@@ -356,7 +357,7 @@ void step_state_machine()
         angle = get_angle_to_hub_limelight();
     }
 
-    bool at_shooter_rpm = reached_target_vel(target_shooter_rpm);
+    bool at_shooter_rpm = turret_state == TurretStates::SPIN_UP_SHOOTER && reached_target_vel(target_shooter_rpm);
     static ros::Time shooter_rpm_false_time = ros::Time::now();
     
     if (!at_shooter_rpm)
@@ -425,7 +426,7 @@ void step_state_machine()
 
         set_turret_angle(angle);
         set_hood_distance(distance);
-        set_shooter_vel(distance);
+        turn_shooter_off();
 
         break;
     }
@@ -685,9 +686,10 @@ void publish_diagnostic_data()
     diagnostics.at_target_hood_angle = at_target_hood_angle;
     diagnostics.at_target_limelight_angle = at_target_limelight_angle;
     diagnostics.at_target_yaw_angle = at_target_yaw_angle;
+    diagnostics.at_shooter_rpm_time = at_shooter_rpm_time;
     diagnostics.spin_up_clearance = spin_up_clearance;
     diagnostics.shoot_clearance = shoot_clearance;
-    diagnostics.allow_shoot = allowed_to_shoot;
+    diagnostics.allowed_to_shoot = allowed_to_shoot;
     diagnostics.about_to_shoot = about_to_shoot;
     diagnostics.limelight_tx = limelight_tx;
 
@@ -709,6 +711,15 @@ void publish_diagnostic_data()
 
     publish_pose (odometry_angle_publisher, odometry_angle);
     publish_pose (limelight_angle_publisher, limelight_angle);
+}
+
+void publish_turret_status()
+{
+    static ros::Publisher status_publisher = node->advertise<turret_node::turret_status>("/TurretStatus", 1);
+    turret_node::turret_status status;
+    status.about_to_shoot = about_to_shoot;
+
+    status_publisher.publish(status);
 }
 
 int main(int argc, char **argv)
@@ -736,6 +747,7 @@ int main(int argc, char **argv)
 
         step_state_machine();
         publish_diagnostic_data();
+        publish_turret_status();
 
         rate.sleep();
     }

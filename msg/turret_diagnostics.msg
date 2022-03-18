@@ -13,7 +13,6 @@ float32 target_yaw_angle
 float32 target_shooter_offset
 float32 target_hood_offset
 float32 target_yaw_offset
-bool allow_shoot
 bool at_target_shooter_rpm
 bool at_target_hood_angle
 bool at_target_yaw_angle

@@ -1,0 +1,1 @@
+bool about_to_shoot
