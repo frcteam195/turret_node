@@ -52,6 +52,7 @@ enum class TurretStates
 static constexpr float SHOOTER_RPM_DELTA = 50;
 static constexpr float HOOD_DEG_DELTA = 1;
 static constexpr float TURRET_YAW_DEG_DELTA = 2;
+static constexpr float SHOOTER_RPM_FILTER_TIME = 0.3;
 
 static TurretStates turret_state = TurretStates::TRACKING;
 static TurretStates next_turret_state = TurretStates::TRACKING;
@@ -66,7 +67,18 @@ static float target_yaw_angle = 0;
 static float target_manual_shooter_rpm = 0;
 static float target_manual_hood_angle = 0;
 static float target_manual_yaw_angle = 0;
+static bool at_target_shooter_rpm = false;
+static bool at_target_hood_angle = false;
+static bool at_target_yaw_angle = false;
+static bool at_target_limelight_angle = false;
+static bool inside_distance_window = false;
+static bool spin_up_clearance = false;
+static bool shoot_clearance = false;
+static bool allowed_to_shoot = false;
 static bool manual_control_enabled = false;
+static bool about_to_shoot = false;
+static float limelight_tx = 0;
+static float at_shooter_rpm_time = 0;
 
 std::string turret_state_to_string(TurretStates state)
 {
@@ -228,6 +240,7 @@ void hmi_signal_callback(const hmi_agent_node::HMI_Signals &msg)
     target_manual_shooter_rpm = msg.turret_speed_rpm;
     target_manual_yaw_angle = msg.turret_aim_degrees;
     manual_control_enabled = msg.turret_manual;
+    allowed_to_shoot = msg.allow_shoot;
 
     // still needs to be updated
 }
@@ -235,6 +248,7 @@ void hmi_signal_callback(const hmi_agent_node::HMI_Signals &msg)
 void limelight_status_callback(const limelight_vision_node::Limelight_Status &msg)
 {
     limelightHasTarget = msg.limelights[0].target_valid;
+    limelight_tx = msg.limelights[0].target_dx_deg;
 }
 
 static float target_vel_offset = 0;
@@ -256,6 +270,11 @@ bool reached_target_turret_yaw_deg(float targetTurretYawDeg)
 {
     target_yaw_offset = fabs(targetTurretYawDeg - actualTurretYawDeg);
     return ck::math::inRange(targetTurretYawDeg - actualTurretYawDeg, TURRET_YAW_DEG_DELTA);
+}
+
+bool reached_limelight_position(float limelightPosition)
+{
+    return ck::math::inRange(limelightPosition, TURRET_YAW_DEG_DELTA);
 }
 
 void set_hood_distance(float distance)
@@ -328,6 +347,35 @@ void step_state_machine()
 
     ros::Duration time_in_state = ros::Time::now() - time_state_entered;
 
+    float distance = get_distance_to_hub();
+    float angle = get_angle_to_hub();
+
+    if(limelightHasTarget)
+    {
+        distance = get_distance_to_hub_limelight();
+        angle = get_angle_to_hub_limelight();
+    }
+
+    bool at_shooter_rpm = reached_target_vel(target_shooter_rpm);
+    static ros::Time shooter_rpm_false_time = ros::Time::now();
+    
+    if (!at_shooter_rpm)
+    {
+        shooter_rpm_false_time = ros::Time::now();
+    }
+
+    at_shooter_rpm_time = (float) ros::Duration(ros::Time::now() - shooter_rpm_false_time).toSec();
+
+    at_target_shooter_rpm = at_shooter_rpm && at_shooter_rpm_time > SHOOTER_RPM_FILTER_TIME;
+    at_target_hood_angle = reached_target_hood_deg(target_hood_angle);
+    at_target_yaw_angle = reached_target_turret_yaw_deg(target_yaw_angle);
+    at_target_limelight_angle = reached_limelight_position(limelight_tx);
+    inside_distance_window = distance < 5.5 && distance > 2.75;
+    spin_up_clearance = allowed_to_shoot && inside_distance_window && limelightHasTarget && at_target_limelight_angle && at_target_yaw_angle && at_target_hood_angle;
+    shoot_clearance = allowed_to_shoot && spin_up_clearance && at_target_shooter_rpm;
+
+    about_to_shoot = turret_state == TurretStates::SPIN_UP_SHOOTER;
+
     switch (turret_state)
     {
     case TurretStates::MANUAL:
@@ -342,8 +390,7 @@ void step_state_machine()
     case TurretStates::TRACKING:
     {
         turn_limelight_off();
-        float distance = get_distance_to_hub();
-        float angle = get_angle_to_hub();
+        
         set_turret_angle(angle);
         set_hood_distance(distance);
         turn_shooter_off();
@@ -358,8 +405,6 @@ void step_state_machine()
     {
         turn_limelight_on();
 
-        float distance = get_distance_to_hub();
-        float angle = get_angle_to_hub();
         set_turret_angle(angle);
         set_hood_distance(distance);
         turn_shooter_off();
@@ -377,15 +422,7 @@ void step_state_machine()
     case TurretStates::TARGET_LOCKED:
     {
         turn_limelight_on();
-        float distance = get_distance_to_hub();
-        float angle = get_angle_to_hub();
 
-        if(limelightHasTarget)
-        {
-            distance = get_distance_to_hub_limelight();
-            angle = get_angle_to_hub_limelight();
-        }
-        
         set_turret_angle(angle);
         set_hood_distance(distance);
         set_shooter_vel(distance);
@@ -397,8 +434,6 @@ void step_state_machine()
 
         turn_limelight_on();
 
-        float distance = get_distance_to_hub_limelight();
-        float angle = get_angle_to_hub_limelight();
         set_turret_angle(angle);
         set_hood_distance(distance);
         set_shooter_vel(distance);
@@ -412,8 +447,6 @@ void step_state_machine()
 
         turn_limelight_on();
 
-        float distance = get_distance_to_hub_limelight();
-        float angle = get_angle_to_hub_limelight();
         set_turret_angle(angle);
         set_hood_distance(distance);
         set_shooter_vel(distance);
@@ -466,7 +499,7 @@ void step_state_machine()
     }
     case TurretStates::TARGET_LOCKED:
     {
-        if (reached_target_hood_deg(target_hood_angle) && reached_target_turret_yaw_deg(target_yaw_angle) && limelightHasTarget)
+        if (spin_up_clearance)
         {
             next_turret_state = TurretStates::SPIN_UP_SHOOTER;
         }
@@ -475,9 +508,13 @@ void step_state_machine()
     }
     case TurretStates::SPIN_UP_SHOOTER:
     {
-        if (reached_target_vel(target_shooter_rpm) && reached_target_hood_deg(target_hood_angle) && reached_target_turret_yaw_deg(target_yaw_angle) && limelightHasTarget )
+        if (shoot_clearance)
         {
             next_turret_state = TurretStates::SHOOT;
+        }
+        if(!allowed_to_shoot)
+        {
+            next_turret_state = TurretStates::TRACKING;
         }
 
         break;
@@ -633,7 +670,9 @@ void publish_diagnostic_data()
     turret_node::turret_diagnostics diagnostics;
     diagnostics.turret_state = turret_state_to_string(turret_state);
     diagnostics.next_turret_state = turret_state_to_string(next_turret_state);
-    diagnostics.actualShooterRPM = actualShooterRPM;
+    diagnostics.actual_shooter_rpm = actualShooterRPM;
+    diagnostics.actual_hood_angle = actualHoodDeg;
+    diagnostics.actual_yaw_angle = actualTurretYawDeg;
     diagnostics.limelightHasTarget = limelightHasTarget;
     diagnostics.readyToShoot = readyToShoot;
     diagnostics.target_hood_angle = target_hood_angle;
@@ -642,6 +681,16 @@ void publish_diagnostic_data()
     diagnostics.target_shooter_offset = target_vel_offset;
     diagnostics.target_hood_offset = target_hood_offset;
     diagnostics.target_yaw_offset = target_yaw_offset;
+    diagnostics.at_target_shooter_rpm = at_target_shooter_rpm;
+    diagnostics.at_target_hood_angle = at_target_hood_angle;
+    diagnostics.at_target_limelight_angle = at_target_limelight_angle;
+    diagnostics.at_target_yaw_angle = at_target_yaw_angle;
+    diagnostics.spin_up_clearance = spin_up_clearance;
+    diagnostics.shoot_clearance = shoot_clearance;
+    diagnostics.allow_shoot = allowed_to_shoot;
+    diagnostics.about_to_shoot = about_to_shoot;
+    diagnostics.limelight_tx = limelight_tx;
+
     if(limelightHasTarget)
     {
         diagnostics.robot_distance = get_distance_to_hub_limelight();
