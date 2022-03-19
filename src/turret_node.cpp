@@ -50,10 +50,11 @@ enum class TurretStates
     SHOOT,
 };
 
-static constexpr float SHOOTER_RPM_DELTA = 50;
+static constexpr float SHOOTER_RPM_DELTA = 150;
 static constexpr float HOOD_DEG_DELTA = 1;
 static constexpr float TURRET_YAW_DEG_DELTA = 2;
-static constexpr float SHOOTER_RPM_FILTER_TIME = 0.4;
+static constexpr float SHOOTER_RPM_FILTER_TIME = 0.2;
+
 
 static TurretStates turret_state = TurretStates::TRACKING;
 static TurretStates next_turret_state = TurretStates::TRACKING;
@@ -524,7 +525,7 @@ void step_state_machine()
     }
     case TurretStates::SHOOT:
     {
-        if (time_in_state > ros::Duration(1))
+        if (time_in_state > ros::Duration(.75))
         {
             next_turret_state = TurretStates::TRACKING;
         }
@@ -532,6 +533,7 @@ void step_state_machine()
         break;
 
         // shoot the ball
+        
     }
     }
 
