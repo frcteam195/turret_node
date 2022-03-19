@@ -48,6 +48,7 @@ enum class TurretStates
     TARGET_LOCKED,
     SPIN_UP_SHOOTER,
     SHOOT,
+    PREPARE_CLIMB
 };
 
 static constexpr float SHOOTER_RPM_DELTA = 250;
@@ -82,6 +83,8 @@ static bool about_to_shoot = false;
 static float limelight_tx = 0;
 static float at_shooter_rpm_time = 0;
 
+static bool hooks_deployed = false;
+
 std::string turret_state_to_string(TurretStates state)
 {
     switch (state)
@@ -114,6 +117,11 @@ std::string turret_state_to_string(TurretStates state)
     case TurretStates::SHOOT:
     {
         return "SHOOT";
+        break;
+    }
+    case TurretStates::PREPARE_CLIMB:
+    {
+        return "PREPARE_CLIMB";
         break;
     }
     }
@@ -243,6 +251,10 @@ void hmi_signal_callback(const hmi_agent_node::HMI_Signals &msg)
     target_manual_yaw_angle = msg.turret_aim_degrees;
     manual_control_enabled = msg.turret_manual;
     allowed_to_shoot = msg.allow_shoot;
+    if (!hooks_deployed)
+    {
+        hooks_deployed = msg.deploy_hooks;
+    }
 
     // still needs to be updated
 }
@@ -334,6 +346,11 @@ void step_state_machine()
     static ros::Publisher intakeControlPublisher = node->advertise<intake_node::Intake_Control>("/IntakeControl", 1);
     intake_node::Intake_Control controlMsg;
     controlMsg.command_shoot = false;
+
+    if (hooks_deployed)
+    {
+        next_turret_state = TurretStates::PREPARE_CLIMB;
+    }
 
     if (manual_control_enabled)
     {
@@ -457,6 +474,12 @@ void step_state_machine()
 
         // shoot the ball
     }
+    case TurretStates::PREPARE_CLIMB:
+    {
+        Turret_Hood_Motor->set(Motor::Control_Mode::MOTION_MAGIC, 0, 0);
+        Turret_Yaw_Motor->set(Motor::Control_Mode::MOTION_MAGIC, 0, 0);
+        break;
+    }
     }
 
     switch (turret_state)
@@ -534,6 +557,10 @@ void step_state_machine()
 
         // shoot the ball
         
+    }
+    case TurretStates::PREPARE_CLIMB:
+    {
+        next_turret_state = TurretStates::PREPARE_CLIMB;    //Stay here forever
     }
     }
 
