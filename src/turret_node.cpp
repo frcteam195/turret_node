@@ -580,8 +580,8 @@ void config_motors()
     Turret_Yaw_Motor->config().set_kI(0.0);
     Turret_Yaw_Motor->config().set_kD(320.0);
     Turret_Yaw_Motor->config().set_kF(0.074611);
-    Turret_Yaw_Motor->config().set_motion_cruise_velocity(4700);
-    Turret_Yaw_Motor->config().set_motion_acceleration(8000);
+    Turret_Yaw_Motor->config().set_motion_cruise_velocity(17000);
+    Turret_Yaw_Motor->config().set_motion_acceleration(26000);
     Turret_Yaw_Motor->config().set_motion_s_curve_strength(5);
     Turret_Yaw_Motor->config().set_forward_soft_limit(0.9);
     Turret_Yaw_Motor->config().set_forward_soft_limit_enable(true);
