@@ -50,9 +50,9 @@ enum class TurretStates
     SHOOT,
 };
 
-static constexpr float SHOOTER_RPM_DELTA = 150;
-static constexpr float HOOD_DEG_DELTA = 1;
-static constexpr float TURRET_YAW_DEG_DELTA = 2;
+static constexpr float SHOOTER_RPM_DELTA = 250;
+static constexpr float HOOD_DEG_DELTA = 2;
+static constexpr float TURRET_YAW_DEG_DELTA = 3;
 static constexpr float SHOOTER_RPM_FILTER_TIME = 0.2;
 
 
