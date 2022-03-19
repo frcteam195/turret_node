@@ -389,11 +389,13 @@ void step_state_machine()
     at_target_hood_angle = reached_target_hood_deg(target_hood_angle);
     at_target_yaw_angle = reached_target_turret_yaw_deg(target_yaw_angle);
     at_target_limelight_angle = reached_limelight_position(limelight_tx);
-    inside_distance_window = distance < 5.5 && distance > 2.75;
+    inside_distance_window = distance < 5.5 && distance > 2.5;
     spin_up_clearance = allowed_to_shoot && inside_distance_window && limelightHasTarget && at_target_limelight_angle && at_target_yaw_angle && at_target_hood_angle;
     shoot_clearance = allowed_to_shoot && spin_up_clearance && at_target_shooter_rpm;
 
-    about_to_shoot = turret_state == TurretStates::SPIN_UP_SHOOTER;
+    about_to_shoot = turret_state == TurretStates::SPIN_UP_SHOOTER || turret_state == TurretStates::SHOOT;
+
+
 
     switch (turret_state)
     {
