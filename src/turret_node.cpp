@@ -53,7 +53,7 @@ enum class TurretStates
 
 static constexpr float SHOOTER_RPM_DELTA = 250;
 static constexpr float HOOD_DEG_DELTA = 2;
-static constexpr float TURRET_YAW_DEG_DELTA = 3;
+static constexpr float TURRET_YAW_DEG_DELTA = 2;
 static constexpr float SHOOTER_RPM_FILTER_TIME = 0.2;
 
 
@@ -315,8 +315,11 @@ void set_shooter_vel(float distance)
     {
         shooter_rpm_lookup_table.insert(2.75, 1335);
         shooter_rpm_lookup_table.insert(3.026, 1325);
-        shooter_rpm_lookup_table.insert(3.88, 1425);
+        // MGT TBD Removing third sample since it's an outlier
+        //shooter_rpm_lookup_table.insert(3.88, 1425);
         shooter_rpm_lookup_table.insert(5.176, 1750);
+        shooter_rpm_lookup_table.insert(7, 2366); // this is an extrapolated value
+
         first_time = false;
     }
     target_shooter_rpm = shooter_rpm_lookup_table.lookup(distance);
