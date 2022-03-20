@@ -341,7 +341,7 @@ void set_turret_angle(float angleDeg)
     }
     while(target_yaw_angle < 0)
     {
-        target_yaw_angle += 360.0
+        target_yaw_angle += 360.0;
     }
     target_yaw_angle -= 180;
     Turret_Yaw_Motor->set(Motor::Control_Mode::MOTION_MAGIC, angleDeg / 360.0, 0);
