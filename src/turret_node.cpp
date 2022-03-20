@@ -408,7 +408,11 @@ void step_state_machine()
     {
     case TurretStates::MANUAL:
     {
-        set_turret_angle(target_manual_yaw_angle);
+        // set_turret_angle(target_manual_yaw_angle);
+        Turret_Yaw_Motor->set(Motor::Control_Mode::PERCENT_OUTPUT, target_manual_yaw_angle, 0);
+        Turret_Yaw_Motor->config().set_forward_soft_limit_enable(false);
+        Turret_Yaw_Motor->config().set_reverse_soft_limit_enable(false);
+        Turret_Yaw_Motor->config().apply();
         Turret_Shooter_Master->set(Motor::Control_Mode::VELOCITY, target_manual_shooter_rpm, 0);
         Turret_Hood_Motor->set(Motor::Control_Mode::MOTION_MAGIC, target_manual_hood_angle / 360.0, 0);
         break;
