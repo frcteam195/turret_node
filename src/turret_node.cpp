@@ -609,7 +609,7 @@ void config_motors()
     Turret_Hood_Motor->config().set_kF(0.047651);
     Turret_Hood_Motor->config().set_motion_cruise_velocity(10000);
     Turret_Hood_Motor->config().set_motion_acceleration(32000);
-    Turret_Hood_Motor->config().set_motion_s_curve_strength(5);
+    // Turret_Hood_Motor->config().set_motion_s_curve_strength(5);
     Turret_Hood_Motor->config().set_forward_soft_limit(21.0/360.0);
     Turret_Hood_Motor->config().set_forward_soft_limit_enable(true);
     Turret_Hood_Motor->config().set_reverse_soft_limit(0);
