@@ -566,6 +566,7 @@ void step_state_machine()
     case TurretStates::PREPARE_CLIMB:
     {
         next_turret_state = TurretStates::PREPARE_CLIMB;    //Stay here forever
+        break;
     }
     }
 
