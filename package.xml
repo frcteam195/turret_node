@@ -53,7 +53,6 @@
     <build_export_depend>rio_control_node</build_export_depend>
     <build_export_depend>ck_utilities_node</build_export_depend>
     <build_export_depend>action_processor_node</build_export_depend>
-    <build_export_depend>intake_node</build_export_depend>
     <build_export_depend>limelight_vision_node</build_export_depend>
   <!-- Use buildtool_depend for build tool packages: -->
   <!--   <buildtool_depend>catkin</buildtool_depend> -->
