@@ -15,8 +15,8 @@
 #include "math.h"
 #include "intake_node/Intake_Control.h"
 #include "intake_node/Intake_Status.h"
-#include "turret_node/turret_diagnostics.h"
-#include "turret_node/turret_status.h"
+#include "turret_node/Turret_Diagnostics.h"
+#include "turret_node/Turret_Status.h"
 #include <thread>
 #include <string>
 #include <mutex>
@@ -80,6 +80,7 @@ static bool shoot_clearance = false;
 static bool allowed_to_shoot = false;
 static bool manual_control_enabled = false;
 static bool about_to_shoot = false;
+static bool ready_to_climb = false;
 static float limelight_tx = 0;
 static float at_shooter_rpm_time = 0;
 
@@ -491,6 +492,10 @@ void step_state_machine()
     {
         Turret_Hood_Motor->set(Motor::Control_Mode::MOTION_MAGIC, 0, 0);
         Turret_Yaw_Motor->set(Motor::Control_Mode::MOTION_MAGIC, 0, 0);
+        if (reached_target_turret_yaw_deg(0))
+        {
+            ready_to_climb = true;
+        }
         break;
     }
     }
@@ -710,8 +715,8 @@ void publish_pose(ros::Publisher publisher, float angle)
 
 void publish_diagnostic_data()
 {
-    static ros::Publisher diagnostic_publisher = node->advertise<turret_node::turret_diagnostics>("/TurretNodeDiagnostics", 1);
-    turret_node::turret_diagnostics diagnostics;
+    static ros::Publisher diagnostic_publisher = node->advertise<turret_node::Turret_Diagnostics>("/TurretNodeDiagnostics", 1);
+    turret_node::Turret_Diagnostics diagnostics;
     diagnostics.turret_state = turret_state_to_string(turret_state);
     diagnostics.next_turret_state = turret_state_to_string(next_turret_state);
     diagnostics.actual_shooter_rpm = actualShooterRPM;
@@ -758,9 +763,10 @@ void publish_diagnostic_data()
 
 void publish_turret_status()
 {
-    static ros::Publisher status_publisher = node->advertise<turret_node::turret_status>("/TurretStatus", 1);
-    turret_node::turret_status status;
+    static ros::Publisher status_publisher = node->advertise<turret_node::Turret_Status>("/TurretStatus", 1);
+    turret_node::Turret_Status status;
     status.about_to_shoot = about_to_shoot;
+    status.ready_to_climb = ready_to_climb;
 
     status_publisher.publish(status);
 }

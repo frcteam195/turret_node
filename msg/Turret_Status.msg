@@ -1,0 +1,2 @@
+bool about_to_shoot
+bool ready_to_climb

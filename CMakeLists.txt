@@ -48,8 +48,8 @@ find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation rio_c
 ## Generate messages in the 'msg' folder
 add_message_files(
   FILES
-  turret_diagnostics.msg
-  turret_status.msg
+  Turret_Diagnostics.msg
+  Turret_Status.msg
 )
 
 ## Generate services in the 'srv' folder
