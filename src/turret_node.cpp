@@ -153,10 +153,14 @@ float get_angle_to_hub()
         theta = ck::math::rad2deg(atan2(y, x));
         return theta;
     }
-
     catch (...)
     {
-        ROS_WARN("Hub transform failed");
+        static ros::Time prevPubTime(0);
+        if (ros::Time::now() - prevPubTime > ros::Duration(1))
+        {
+            ROS_WARN("Hub transform failed");
+            prevPubTime = ros::Time::now();
+        }
     }
     return 0;
 }
@@ -173,7 +177,12 @@ float get_distance_to_hub()
 
     catch (...)
     {
-        ROS_WARN("Hub transform failed");
+        static ros::Time prevPubTime(0);
+        if (ros::Time::now() - prevPubTime > ros::Duration(1))
+        {
+            ROS_WARN("Hub transform failed");
+            prevPubTime = ros::Time::now();
+        }
     }
     return 0;
 }
@@ -195,7 +204,12 @@ float get_angle_to_hub_limelight()
 
     catch (...)
     {
-        ROS_WARN("Hub transform failed");
+        static ros::Time prevPubTime(0);
+        if (ros::Time::now() - prevPubTime > ros::Duration(1))
+        {
+            ROS_WARN("Hub transform failed");
+            prevPubTime = ros::Time::now();
+        }
     }
     return 0;
 }
@@ -212,7 +226,12 @@ float get_distance_to_hub_limelight()
 
     catch (...)
     {
-        ROS_WARN("Hub transform failed");
+        static ros::Time prevPubTime(0);
+        if (ros::Time::now() - prevPubTime > ros::Duration(1))
+        {
+            ROS_WARN("Hub transform failed");
+            prevPubTime = ros::Time::now();
+        }
     }
     return 0;
 }
@@ -267,8 +286,11 @@ void hmi_signal_callback(const hmi_agent_node::HMI_Signals &msg)
 
 void limelight_status_callback(const limelight_vision_node::Limelight_Status &msg)
 {
-    limelightHasTarget = msg.limelights[0].target_valid;
-    limelight_tx = msg.limelights[0].target_dx_deg;
+    if (msg.limelights.size() > 0)
+    {
+        limelightHasTarget = msg.limelights[0].target_valid;
+        limelight_tx = msg.limelights[0].target_dx_deg;
+    }
 }
 
 static float target_vel_offset = 0;
