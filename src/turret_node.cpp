@@ -361,40 +361,37 @@ void turn_shooter_off()
 
 float calculate_turret_angle(float angleDeg, float prevAngle)
 {
+    (void) prevAngle;
     target_yaw_angle = angleDeg;
-    target_yaw_angle += 180;
-    if (target_yaw_angle > 270.0)
+    while(target_yaw_angle > 270)
     {
-        while(target_yaw_angle > 270.0)
-        {
-            target_yaw_angle -= 360.0;
-        }
+        target_yaw_angle -= 360.0;
     }
-    else if(target_yaw_angle < 270)
+    while(target_yaw_angle < -90.0)
     {
-        while(target_yaw_angle < 270)
-        {
-            target_yaw_angle += 360.0;
-        }
+        target_yaw_angle += 360.0;
     }
-    target_yaw_angle -= 180;
-    
+    ROS_INFO("Angledeg: %f target_yaw_angle: %f", angleDeg, target_yaw_angle);
 
-    if (prevAngle < actualTurretYawDeg && target_yaw_angle > 285)
-    {
-        target_yaw_angle = target_yaw_angle - 360;
-    }
-    else if (prevAngle > actualTurretYawDeg && target_yaw_angle < -105)
-    {
-        target_yaw_angle = target_yaw_angle + 360;
-    }
+    // if (prevAngle < actualTurretYawDeg && target_yaw_angle > 105)
+    // {
+    //     target_yaw_angle = target_yaw_angle - 360;
+    // }
+    // else if (prevAngle > actualTurretYawDeg && target_yaw_angle < -285)
+    // {
+    //     target_yaw_angle = target_yaw_angle + 360;
+    // }
+    // ROS_INFO("After Angledeg: %f target_yaw_angle: %f", angleDeg, target_yaw_angle);
 
     return target_yaw_angle;
 }
 
 void set_turret_angle(float angleDeg)
 {
-    Turret_Yaw_Motor->set(Motor::Control_Mode::MOTION_MAGIC, calculate_turret_angle(angleDeg, actualTurretYawDeg) / 360.0, 0);
+    static float prev_target_angle = 0;
+    float target_angle = calculate_turret_angle(angleDeg, prev_target_angle);
+    prev_target_angle = target_angle;
+    Turret_Yaw_Motor->set(Motor::Control_Mode::MOTION_MAGIC, target_angle / 360.0, 0);
 }
 
 void step_state_machine()
