@@ -371,7 +371,6 @@ float calculate_turret_angle(float angleDeg, float prevAngle)
     {
         target_yaw_angle += 360.0;
     }
-    ROS_INFO("Angledeg: %f target_yaw_angle: %f", angleDeg, target_yaw_angle);
 
     // if (prevAngle < actualTurretYawDeg && target_yaw_angle > 105)
     // {
