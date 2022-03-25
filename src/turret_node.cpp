@@ -18,6 +18,7 @@
 #include "intake_node/Intake_Status.h"
 #include "turret_node/Turret_Diagnostics.h"
 #include "turret_node/Turret_Status.h"
+#include "climber_node/Turret_Ready.h"
 #include <thread>
 #include <string>
 #include <mutex>
@@ -790,11 +791,14 @@ void publish_diagnostic_data()
 void publish_turret_status()
 {
     static ros::Publisher status_publisher = node->advertise<turret_node::Turret_Status>("/TurretStatus", 1);
+    static ros::Publisher turret_climb_ready_publisher = node->advertise<climber_node::Turret_Ready>("/TurretClimbReady", 1);
     turret_node::Turret_Status status;
+    climber_node::Turret_Ready turretClimbStatus;
     status.about_to_shoot = about_to_shoot;
-    status.ready_to_climb = ready_to_climb;
+    turretClimbStatus.ready_to_climb = ready_to_climb;
 
     status_publisher.publish(status);
+    turret_climb_ready_publisher.publish(turretClimbStatus);
 }
 
 int main(int argc, char **argv)
