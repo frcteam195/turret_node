@@ -13,22 +13,22 @@ TEST(SampleTest, Test_Test)
 TEST(TurretTest, Test_Wrap_Around)
 {
     float output = calculate_turret_angle(280, 270);
-    ASSERT_EQ(output, -80);
+    ASSERT_EQ(output, 280);
 
-    output = calculate_turret_angle(295, 270);
-    ASSERT_EQ(output, -65);
+    output = calculate_turret_angle(294, 270);
+    ASSERT_EQ(output, -66);
 
     output = calculate_turret_angle(285, 270);
-    ASSERT_EQ(output, -75);
+    ASSERT_EQ(output, 285);
 
     output = calculate_turret_angle(-70, -60);
     ASSERT_EQ(output, -70);
 
     output = calculate_turret_angle(-100, -60);
-    ASSERT_EQ(output, 260);
+    ASSERT_EQ(output, -100);
 
-    output = calculate_turret_angle(-115, -60);
-    ASSERT_EQ(output, 245);
+    output = calculate_turret_angle(-120, -60);
+    ASSERT_EQ(output, 240);
 }
 
 int main(int argc, char **argv)

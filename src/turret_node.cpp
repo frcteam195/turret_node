@@ -358,30 +358,38 @@ void turn_shooter_off()
 {
     Turret_Shooter_Master->set(Motor::Control_Mode::VELOCITY, 0, 0);
 }
+enum class BiasDirection
+{
+    LEFT, 
+    RIGHT,
+};
 
 float calculate_turret_angle(float angleDeg, float prevAngle)
 {
-    (void) prevAngle;
+    BiasDirection bias = BiasDirection::LEFT;
+    
+    if (prevAngle < 90)
+    {
+        bias = BiasDirection::RIGHT;
+    }
+    else
+    {
+        bias = BiasDirection::LEFT;
+    }
+    
+    float offset = bias == BiasDirection::RIGHT ? -15 : 15;
     target_yaw_angle = angleDeg;
-    while(target_yaw_angle > 270)
+
+    while(target_yaw_angle > 270 + offset)
     {
         target_yaw_angle -= 360.0;
     }
-    while(target_yaw_angle < -90.0)
+    while(target_yaw_angle < -90.0 + offset)
     {
         target_yaw_angle += 360.0;
     }
 
-    // if (prevAngle < actualTurretYawDeg && target_yaw_angle > 105)
-    // {
-    //     target_yaw_angle = target_yaw_angle - 360;
-    // }
-    // else if (prevAngle > actualTurretYawDeg && target_yaw_angle < -285)
-    // {
-    //     target_yaw_angle = target_yaw_angle + 360;
-    // }
-    // ROS_INFO("After Angledeg: %f target_yaw_angle: %f", angleDeg, target_yaw_angle);
-
+   
     return target_yaw_angle;
 }
 
