@@ -23,3 +23,4 @@ bool allowed_to_shoot
 bool manual_control_enabled
 bool about_to_shoot
 float32 at_shooter_rpm_time
+float64 turret_arbFF

@@ -29,6 +29,7 @@
 #include <rio_control_node/Motor_Status.h>
 #include <hmi_agent_node/HMI_Signals.h>
 #include <geometry_msgs/TransformStamped.h>
+#include <nav_msgs/Odometry.h>
 
 #define TURRET_SHOOTER_MASTER_CAN_ID 16
 #define TURRET_SHOOTER_SLAVE_CAN_ID 17
@@ -87,6 +88,14 @@ static float limelight_tx = 0;
 static float at_shooter_rpm_time = 0;
 
 static bool hooks_deployed = false;
+
+static double rotation_rate_rad_per_sec = 0;
+static constexpr double MAX_ROTATION_RATE_RAD_PER_SEC = 8.9;
+static double turret_arbFF = 0;
+
+static constexpr double TURRET_GEAR_RATIO = 26.875;
+static constexpr double TURRET_CRUISE_VEL_TICKS_PER_100MS = 17000.0;
+static constexpr double TURRET_MAX_YAW_RATE_RAD_PER_SEC = TURRET_CRUISE_VEL_TICKS_PER_100MS / 2048.0 * 600.0 / TURRET_GEAR_RATIO / 60.0 * 2.0 * ck::math::PI;
 
 std::string turret_state_to_string(TurretStates state)
 {
@@ -266,6 +275,12 @@ void intake_status_callback(const intake_node::Intake_Status &msg)
     readyToShoot = msg.readyToShoot;
 }
 
+void odometry_callback(const nav_msgs::Odometry &msg)
+{
+    //Max angular rate is 8.9rad/s
+    rotation_rate_rad_per_sec = msg.twist.twist.angular.z; //rad/s
+}
+
 void hmi_signal_callback(const hmi_agent_node::HMI_Signals &msg)
 {
     target_manual_hood_angle = msg.turret_hood_degrees;
@@ -395,7 +410,14 @@ void set_turret_angle(float angleDeg)
     static float prev_target_angle = 0;
     float target_angle = calculate_turret_angle(angleDeg, prev_target_angle);
     prev_target_angle = target_angle;
-    Turret_Yaw_Motor->set(Motor::Control_Mode::MOTION_MAGIC, target_angle / 360.0, 0);
+
+    double rawPercentRotation = rotation_rate_rad_per_sec / TURRET_MAX_YAW_RATE_RAD_PER_SEC;
+    rawPercentRotation = ck::math::signum(rawPercentRotation) * std::min(std::abs(rawPercentRotation), 1.0);
+
+    int turret_direction_signum = ck::math::signum(target_angle - actualTurretYawDeg);
+
+    turret_arbFF = ck::math::signum(rawPercentRotation) != turret_direction_signum ? 0 : rawPercentRotation;
+    Turret_Yaw_Motor->set(Motor::Control_Mode::MOTION_MAGIC, target_angle / 360.0, turret_arbFF);
 }
 
 void step_state_machine()
@@ -647,7 +669,7 @@ void config_motors()
     Turret_Yaw_Motor->config().set_kI(0.0);
     Turret_Yaw_Motor->config().set_kD(320.0);
     Turret_Yaw_Motor->config().set_kF(0.074611);
-    Turret_Yaw_Motor->config().set_motion_cruise_velocity(17000);
+    Turret_Yaw_Motor->config().set_motion_cruise_velocity(TURRET_CRUISE_VEL_TICKS_PER_100MS);
     Turret_Yaw_Motor->config().set_motion_acceleration(26000);
     Turret_Yaw_Motor->config().set_motion_s_curve_strength(5);
     Turret_Yaw_Motor->config().set_forward_soft_limit(0.55);
@@ -836,6 +858,7 @@ int main(int argc, char **argv)
     ros::Subscriber motor_status_subscribe = node->subscribe("/MotorStatus", 1, motor_status_callback);
     ros::Subscriber limelight_status_subscribe = node->subscribe("/LimelightStatus", 1, limelight_status_callback);
     ros::Subscriber intake_status_subscribe = node->subscribe("/IntakeStatus", 1, intake_status_callback);
+    ros::Subscriber odometry_subscribe = node->subscribe("/odometry/filtered", 1, odometry_callback);
 
     action_helper = new ActionHelper(node);
 
