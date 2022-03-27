@@ -368,23 +368,23 @@ float calculate_turret_angle(float angleDeg, float prevAngle)
 {
     BiasDirection bias = BiasDirection::LEFT;
     
-    if (prevAngle < 90)
+    if (prevAngle < -90)
     {
-        bias = BiasDirection::RIGHT;
+        bias = BiasDirection::LEFT;
     }
     else
     {
-        bias = BiasDirection::LEFT;
+        bias = BiasDirection::RIGHT;
     }
     
     float offset = bias == BiasDirection::RIGHT ? -15 : 15;
     target_yaw_angle = angleDeg;
 
-    while(target_yaw_angle > 270 + offset)
+    while(target_yaw_angle > 90 + offset)
     {
         target_yaw_angle -= 360.0;
     }
-    while(target_yaw_angle < -90.0 + offset)
+    while(target_yaw_angle < -270.0 + offset)
     {
         target_yaw_angle += 360.0;
     }
@@ -653,9 +653,9 @@ void config_motors()
     Turret_Yaw_Motor->config().set_motion_cruise_velocity(17000);
     Turret_Yaw_Motor->config().set_motion_acceleration(26000);
     Turret_Yaw_Motor->config().set_motion_s_curve_strength(5);
-    Turret_Yaw_Motor->config().set_forward_soft_limit(0.9);
+    Turret_Yaw_Motor->config().set_forward_soft_limit(0.55);
     Turret_Yaw_Motor->config().set_forward_soft_limit_enable(true);
-    Turret_Yaw_Motor->config().set_reverse_soft_limit(-0.9);
+    Turret_Yaw_Motor->config().set_reverse_soft_limit(-1.0);
     Turret_Yaw_Motor->config().set_reverse_soft_limit_enable(true);
     Turret_Yaw_Motor->config().set_closed_loop_ramp(0.25);
     Turret_Yaw_Motor->config().set_supply_current_limit(true, 25, 0, 0);
@@ -731,7 +731,7 @@ void motor_status_callback(const rio_control_node::Motor_Status &msg)
 
         transformStamped.transform.translation.x = 0;
         transformStamped.transform.translation.y = 0;
-        transformStamped.transform.translation.z = 14 * INCHES_TO_METERS;
+        transformStamped.transform.translation.z = (31 + (7/8)) * INCHES_TO_METERS;
 
         tf2::Quaternion q;
         q.setRPY(0, 0, motorInfoMap[TURRET_YAW_CAN_ID].sensor_position * 2.0 * M_PI);
