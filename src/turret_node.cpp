@@ -29,7 +29,6 @@
 #include <rio_control_node/Motor_Status.h>
 #include <hmi_agent_node/HMI_Signals.h>
 #include <geometry_msgs/TransformStamped.h>
-#include "ck_utilities/MovingAverage.hpp"
 
 #define TURRET_SHOOTER_MASTER_CAN_ID 16
 #define TURRET_SHOOTER_SLAVE_CAN_ID 17
@@ -42,7 +41,6 @@ tf2_ros::TransformBroadcaster *tfBroadcaster;
 tf2_ros::TransformListener *tfListener;
 tf2_ros::Buffer tfBuffer;
 ActionHelper *action_helper;
-ck::MovingAverage llAngleAverage(3);
 
 enum class TurretStates
 {
@@ -198,8 +196,7 @@ float get_angle_to_hub_limelight()
         float x = limelight_link_hub.getOrigin().getX();
         float y = limelight_link_hub.getOrigin().getY();
         theta = ck::math::rad2deg(atan2(y, x));
-        llAngleAverage.addSample(theta);
-        return llAngleAverage.getAverage();
+        return theta;
     }
 
     catch (...)
