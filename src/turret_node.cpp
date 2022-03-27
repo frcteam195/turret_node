@@ -365,7 +365,7 @@ float calculate_turret_angle(float angleDeg, float prevAngle)
 {
     BiasDirection bias = BiasDirection::LEFT;
     
-    if (prevAngle < -90)
+    if (prevAngle > -90)
     {
         bias = BiasDirection::LEFT;
     }
