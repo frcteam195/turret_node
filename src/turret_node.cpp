@@ -31,6 +31,10 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <nav_msgs/Odometry.h>
 
+#include <network_tables_node/NTSetBool.h>
+#include <network_tables_node/NTSetDouble.h>
+#include <network_tables_node/NTSetString.h>
+
 #define TURRET_SHOOTER_MASTER_CAN_ID 16
 #define TURRET_SHOOTER_SLAVE_CAN_ID 17
 #define TURRET_YAW_CAN_ID 18
@@ -42,6 +46,10 @@ tf2_ros::TransformBroadcaster *tfBroadcaster;
 tf2_ros::TransformListener *tfListener;
 tf2_ros::Buffer tfBuffer;
 ActionHelper *action_helper;
+
+ros::ServiceClient nt_setbool_client;
+ros::ServiceClient nt_setdouble_client;
+ros::ServiceClient nt_setstring_client;
 
 enum class TurretStates
 {
@@ -96,6 +104,33 @@ static double turret_arbFF = 0;
 static constexpr double TURRET_GEAR_RATIO = 26.875;
 static constexpr double TURRET_CRUISE_VEL_TICKS_PER_100MS = 21000.0;
 static constexpr double TURRET_MAX_YAW_RATE_RAD_PER_SEC = TURRET_CRUISE_VEL_TICKS_PER_100MS / 2048.0 * 600.0 / TURRET_GEAR_RATIO / 60.0 * 2.0 * ck::math::PI;
+
+ros::ServiceClient& getNTSetBoolSrv()
+{
+	if (!nt_setbool_client)
+	{
+		nt_setbool_client = node->serviceClient<network_tables_node::NTSetBool>("nt_setbool", true);
+	}
+	return nt_setbool_client;
+}
+
+ros::ServiceClient& getNTSetDoubleSrv()
+{
+	if (!nt_setdouble_client)
+	{
+		nt_setdouble_client = node->serviceClient<network_tables_node::NTSetDouble>("nt_setdouble", true);
+	}
+	return nt_setdouble_client;
+}
+
+ros::ServiceClient& getNTSetStringSrv()
+{
+	if (!nt_setstring_client)
+	{
+		nt_setstring_client = node->serviceClient<network_tables_node::NTSetString>("nt_setstring", true);
+	}
+	return nt_setstring_client;
+}
 
 std::string turret_state_to_string(TurretStates state)
 {
@@ -874,6 +909,11 @@ int main(int argc, char **argv)
     tfBroadcaster = new tf2_ros::TransformBroadcaster();
 
     tfListener = new tf2_ros::TransformListener(tfBuffer);
+
+	getNTSetBoolSrv();
+	getNTSetDoubleSrv();
+	getNTSetStringSrv();
+
     ros::Rate rate(100);
     while (ros::ok())
     {
@@ -882,6 +922,12 @@ int main(int argc, char **argv)
         step_state_machine();
         publish_diagnostic_data();
         publish_turret_status();
+
+        ros::ServiceClient& nt_setdouble_localclient = getNTSetDoubleSrv();
+        if (nt_setdouble_localclient)
+        {
+
+        }
 
         rate.sleep();
     }
