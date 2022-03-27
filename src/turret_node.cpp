@@ -89,12 +89,12 @@ static float at_shooter_rpm_time = 0;
 
 static bool hooks_deployed = false;
 
-static double rotation_rate_rad_per_sec = 0;
+static double robot_rotation_rate_rad_per_sec = 0;
 static constexpr double MAX_ROTATION_RATE_RAD_PER_SEC = 8.9;
 static double turret_arbFF = 0;
 
 static constexpr double TURRET_GEAR_RATIO = 26.875;
-static constexpr double TURRET_CRUISE_VEL_TICKS_PER_100MS = 17000.0;
+static constexpr double TURRET_CRUISE_VEL_TICKS_PER_100MS = 21000.0;
 static constexpr double TURRET_MAX_YAW_RATE_RAD_PER_SEC = TURRET_CRUISE_VEL_TICKS_PER_100MS / 2048.0 * 600.0 / TURRET_GEAR_RATIO / 60.0 * 2.0 * ck::math::PI;
 
 std::string turret_state_to_string(TurretStates state)
@@ -278,7 +278,7 @@ void intake_status_callback(const intake_node::Intake_Status &msg)
 void odometry_callback(const nav_msgs::Odometry &msg)
 {
     //Max angular rate is 8.9rad/s
-    rotation_rate_rad_per_sec = msg.twist.twist.angular.z; //rad/s
+    robot_rotation_rate_rad_per_sec = msg.twist.twist.angular.z; //rad/s
 }
 
 void hmi_signal_callback(const hmi_agent_node::HMI_Signals &msg)
@@ -411,12 +411,20 @@ void set_turret_angle(float angleDeg)
     float target_angle = calculate_turret_angle(angleDeg, prev_target_angle);
     prev_target_angle = target_angle;
 
-    double rawPercentRotation = rotation_rate_rad_per_sec / TURRET_MAX_YAW_RATE_RAD_PER_SEC;
-    rawPercentRotation = ck::math::signum(rawPercentRotation) * std::min(std::abs(rawPercentRotation), 1.0);
+    if (std::abs(robot_rotation_rate_rad_per_sec) > 0.2)
+    {
+        double rawPercentRotation = -(robot_rotation_rate_rad_per_sec / TURRET_MAX_YAW_RATE_RAD_PER_SEC) * 24.0;
+        rawPercentRotation = ck::math::signum(rawPercentRotation) * std::min(std::abs(rawPercentRotation), 1.0);
 
-    int turret_direction_signum = ck::math::signum(target_angle - actualTurretYawDeg);
+        int turret_direction_signum = ck::math::signum(target_angle - actualTurretYawDeg);
 
-    turret_arbFF = ck::math::signum(rawPercentRotation) != turret_direction_signum ? 0 : rawPercentRotation;
+        turret_arbFF = ck::math::signum(rawPercentRotation) != turret_direction_signum ? 0 : rawPercentRotation;
+    }
+    else
+    {
+        turret_arbFF = 0;
+    }
+
     Turret_Yaw_Motor->set(Motor::Control_Mode::MOTION_MAGIC, target_angle / 360.0, turret_arbFF);
 }
 
@@ -670,14 +678,14 @@ void config_motors()
     Turret_Yaw_Motor->config().set_kD(320.0);
     Turret_Yaw_Motor->config().set_kF(0.074611);
     Turret_Yaw_Motor->config().set_motion_cruise_velocity(TURRET_CRUISE_VEL_TICKS_PER_100MS);
-    Turret_Yaw_Motor->config().set_motion_acceleration(26000);
+    Turret_Yaw_Motor->config().set_motion_acceleration(38000);
     Turret_Yaw_Motor->config().set_motion_s_curve_strength(5);
     Turret_Yaw_Motor->config().set_forward_soft_limit(0.55);
     Turret_Yaw_Motor->config().set_forward_soft_limit_enable(true);
     Turret_Yaw_Motor->config().set_reverse_soft_limit(-1.0);
     Turret_Yaw_Motor->config().set_reverse_soft_limit_enable(true);
     Turret_Yaw_Motor->config().set_closed_loop_ramp(0.25);
-    Turret_Yaw_Motor->config().set_supply_current_limit(true, 25, 0, 0);
+    Turret_Yaw_Motor->config().set_supply_current_limit(true, 40, 0, 0);
     Turret_Yaw_Motor->config().apply();
 
     Turret_Hood_Motor->config().set_kP(0.8);
@@ -812,6 +820,7 @@ void publish_diagnostic_data()
     diagnostics.allowed_to_shoot = allowed_to_shoot;
     diagnostics.about_to_shoot = about_to_shoot;
     diagnostics.limelight_tx = limelight_tx;
+    diagnostics.turret_arbFF = turret_arbFF;
 
     if(limelightHasTarget)
     {
