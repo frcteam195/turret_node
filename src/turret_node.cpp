@@ -889,7 +889,38 @@ void publish_turret_status()
     status_publisher.publish(status);
     turret_climb_ready_publisher.publish(turretClimbStatus);
 }
+void publish_shuffleboard_data()
+{
+    ros::ServiceClient& nt_setbool_localclient = getNTSetBoolSrv();
+    if (nt_setbool_localclient)
+    {
+        network_tables_node::NTSetBool ntmsg;
+		ntmsg.request.table_name = "dashboard_data";
+        ntmsg.request.entry_name = "spin_up_clearance";
+        ntmsg.request.value = spin_up_clearance;
+        nt_setbool_localclient.call(ntmsg);
+    }
+    
+    
+    ros::ServiceClient& nt_setdouble_localclient = getNTSetDoubleSrv();
+    if (nt_setdouble_localclient)
+    {
+        network_tables_node::NTSetDouble ntmsg;
+		ntmsg.request.table_name = "dashboard_data";
+        ntmsg.request.entry_name = "shooter_rpm";
+        ntmsg.request.value = actualShooterRPM;
+        nt_setdouble_localclient.call(ntmsg);
+    	
+        ntmsg.request.entry_name = "hood_angle";
+        ntmsg.request.value = actualHoodDeg;
+        nt_setdouble_localclient.call(ntmsg);
 
+        ntmsg.request.entry_name = "turret_angle";
+        ntmsg.request.value = actualTurretYawDeg;
+        nt_setdouble_localclient.call(ntmsg);
+    }
+    
+}
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "turret_node");
@@ -922,12 +953,8 @@ int main(int argc, char **argv)
         step_state_machine();
         publish_diagnostic_data();
         publish_turret_status();
-
-        ros::ServiceClient& nt_setdouble_localclient = getNTSetDoubleSrv();
-        if (nt_setdouble_localclient)
-        {
-
-        }
+        publish_shuffleboard_data();
+    
 
         rate.sleep();
     }
