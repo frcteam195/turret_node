@@ -207,6 +207,26 @@ float get_angle_to_hub()
     return 0;
 }
 
+float lookup_corrected_distance(float input)
+{
+    float input_inches = input / INCHES_TO_METERS;
+    static bool first = true;
+    static InterpolatingMap<float, float> distance_correction_map;
+    if (first)
+    {
+        distance_correction_map.insert(108.0, 108.228);
+        distance_correction_map.insert(132.0, 133.248);
+        distance_correction_map.insert(156.0, 157.97);
+        distance_correction_map.insert(180.0, 185.354);
+        distance_correction_map.insert(204.0, 208.189);
+        distance_correction_map.insert(228.0, 238.779);
+        // distance_correction_map.insert(252, 270.334); this was an outlier
+        distance_correction_map.insert(276.0, 288.878);
+    }
+    return distance_correction_map.lookup(input_inches) * INCHES_TO_METERS;
+    
+}
+
 float get_distance_to_hub()
 {
     tf2::Stamped<tf2::Transform> robot_base_to_hub;
@@ -214,7 +234,7 @@ float get_distance_to_hub()
     try
     {
         tf2::convert(tfBuffer.lookupTransform("base_link", "hub_link", ros::Time(0)), robot_base_to_hub);
-        return robot_base_to_hub.getOrigin().length();
+        return lookup_corrected_distance(robot_base_to_hub.getOrigin().length());
     }
 
     catch (...)
@@ -262,7 +282,7 @@ float get_distance_to_hub_limelight()
     try
     {
         tf2::convert(tfBuffer.lookupTransform("base_link", "limelight_link_hub", ros::Time(0)), limelight_link_hub);
-        return sqrt(pow(limelight_link_hub.getOrigin().getX(), 2) + pow(limelight_link_hub.getOrigin().getY(), 2));
+        return lookup_corrected_distance(sqrt(pow(limelight_link_hub.getOrigin().getX(), 2) + pow(limelight_link_hub.getOrigin().getY(), 2)));
     }
 
     catch (...)
@@ -513,7 +533,7 @@ void step_state_machine()
     at_target_yaw_angle = reached_target_turret_yaw_deg(target_yaw_angle);
     at_target_limelight_angle = true;//reached_limelight_position(limelight_tx);
     inside_distance_window = true;//distance < 5.5 && distance > 2.5;
-    spin_up_clearance = allowed_to_shoot && inside_distance_window && limelightHasTarget && at_target_limelight_angle && at_target_yaw_angle && at_target_hood_angle;
+    spin_up_clearance = allowed_to_shoot && inside_distance_window /*&& limelightHasTarget*/ && at_target_limelight_angle && at_target_yaw_angle && at_target_hood_angle;
     shoot_clearance = allowed_to_shoot && spin_up_clearance && at_target_shooter_rpm;
 
     about_to_shoot = turret_state == TurretStates::SPIN_UP_SHOOTER || turret_state == TurretStates::SHOOT;
