@@ -181,6 +181,7 @@ float lookup_corrected_distance(float input)
     static InterpolatingMap<float, float> distance_correction_map;
     if (first)
     {
+        distance_correction_map.insert(0.0, 0.0);
         distance_correction_map.insert(108.0, 108.228);
         distance_correction_map.insert(132.0, 133.248);
         distance_correction_map.insert(156.0, 157.97);
@@ -189,7 +190,11 @@ float lookup_corrected_distance(float input)
         distance_correction_map.insert(228.0, 238.779);
         // distance_correction_map.insert(252, 270.334); this was an outlier
         distance_correction_map.insert(276.0, 288.878);
+        distance_correction_map.insert(380.0, 397.730);
+        distance_correction_map.insert(450.0, 470.996);
+        first = false;
     }
+    ROS_INFO("Inches Input: %f, output: %f", input_inches, distance_correction_map.lookup(input_inches) * INCHES_TO_METERS);
     return distance_correction_map.lookup(input_inches) * INCHES_TO_METERS;
     
 }
@@ -709,6 +714,7 @@ void config_motors()
     Turret_Yaw_Motor->config().set_closed_loop_ramp(0.25);
     Turret_Yaw_Motor->config().set_supply_current_limit(true, 40, 0, 0);
     Turret_Yaw_Motor->config().apply();
+    Turret_Yaw_Motor->set(Motor::Control_Mode::MOTION_MAGIC, 0, 0);
 
     Turret_Hood_Motor->config().set_kP(0.8);
     Turret_Hood_Motor->config().set_kI(0.0);
@@ -725,6 +731,7 @@ void config_motors()
     Turret_Hood_Motor->config().set_inverted(true);
     Turret_Hood_Motor->config().set_closed_loop_ramp(0.25);
     Turret_Hood_Motor->config().apply();
+    Turret_Hood_Motor->set(Motor::Control_Mode::MOTION_MAGIC, 0, 0);
 
     Turret_Shooter_Slave_Motor->config().set_follower(true, TURRET_SHOOTER_MASTER_CAN_ID);
     Turret_Shooter_Slave_Motor->config().set_inverted(true);
@@ -741,6 +748,8 @@ void config_motors()
     Turret_Shooter_Master->config().set_peak_output_reverse(-0.5);
     Turret_Shooter_Master->config().set_supply_current_limit(true, 40, 20, 1);
     Turret_Shooter_Master->config().apply();
+    Turret_Shooter_Master->set(Motor::Control_Mode::VELOCITY, 0, 0);
+
 }
 
 void motor_status_callback(const rio_control_node::Motor_Status &msg)
@@ -909,6 +918,7 @@ int main(int argc, char **argv)
     while (ros::ok())
     {
         ros::spinOnce();
+
 
         step_state_machine();
         publish_diagnostic_data();
