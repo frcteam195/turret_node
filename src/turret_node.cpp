@@ -364,10 +364,31 @@ void set_hood_distance(float distance)
     static bool first_time = true;
     if (first_time)
     {
-        hood_lookup_table.insert(2.75, 7.3);
-        hood_lookup_table.insert(3.026, 9.82);
-        hood_lookup_table.insert(3.88, 12.7);
-        hood_lookup_table.insert(5.176, 17.67);
+        hood_lookup_table.insert(1.161,0);
+        hood_lookup_table.insert(1.473,0.005);
+        hood_lookup_table.insert(1.768,0.0125);
+        hood_lookup_table.insert(2.35,0.0215);
+        hood_lookup_table.insert(2.728,0.03);
+        hood_lookup_table.insert(3.145,0.0355);
+        hood_lookup_table.insert(3.38,0.0385);
+        hood_lookup_table.insert(3.72,0.0415);
+        hood_lookup_table.insert(3.96,0.044);
+        hood_lookup_table.insert(4.37,0.0455);
+        hood_lookup_table.insert(4.65,0.0475);
+        hood_lookup_table.insert(4.99,0.05);
+        hood_lookup_table.insert(5.52,0.0515);
+        hood_lookup_table.insert(5.79,0.0515);
+        hood_lookup_table.insert(6.208,0.0535);
+        hood_lookup_table.insert(7.13,0.0575);
+        hood_lookup_table.insert(7.66,0.0625);
+        hood_lookup_table.insert(7.93,0.065);
+        hood_lookup_table.insert(8.37,0.065);
+        hood_lookup_table.insert(8.99,0.065);
+        hood_lookup_table.insert(9.19,0.065);
+        hood_lookup_table.insert(9.4,0.065);
+        hood_lookup_table.insert(10.065,0.065);
+        hood_lookup_table.insert(10.26,0.065);
+        hood_lookup_table.insert(10.8,0.065);
         first_time = false;
     }
     target_hood_angle = hood_lookup_table.lookup(distance);
@@ -380,12 +401,31 @@ void set_shooter_vel(float distance)
     static bool first_time = true;
     if (first_time)
     {
-        shooter_rpm_lookup_table.insert(2.75, 1335);
-        shooter_rpm_lookup_table.insert(3.026, 1325);
-        // MGT TBD Removing third sample since it's an outlier
-        //shooter_rpm_lookup_table.insert(3.88, 1425);
-        shooter_rpm_lookup_table.insert(5.176, 1750);
-        shooter_rpm_lookup_table.insert(7, 2366); // this is an extrapolated value
+        shooter_rpm_lookup_table.insert(1.161,1125);
+        shooter_rpm_lookup_table.insert(1.473,1125);
+        shooter_rpm_lookup_table.insert(1.768,1175);
+        shooter_rpm_lookup_table.insert(2.35,1200);
+        shooter_rpm_lookup_table.insert(2.728,1250);
+        shooter_rpm_lookup_table.insert(3.145,1300);
+        shooter_rpm_lookup_table.insert(3.38,1365);
+        shooter_rpm_lookup_table.insert(3.72,1400);
+        shooter_rpm_lookup_table.insert(3.96,1460);
+        shooter_rpm_lookup_table.insert(4.37,1525);
+        shooter_rpm_lookup_table.insert(4.65,1600);
+        shooter_rpm_lookup_table.insert(4.99,1725);
+        shooter_rpm_lookup_table.insert(5.52,1800);
+        shooter_rpm_lookup_table.insert(5.79,1850);
+        shooter_rpm_lookup_table.insert(6.208,1900);
+        shooter_rpm_lookup_table.insert(7.13,1950);
+        shooter_rpm_lookup_table.insert(7.66,2050);
+        shooter_rpm_lookup_table.insert(7.93,2150);
+        shooter_rpm_lookup_table.insert(8.37,2250);
+        shooter_rpm_lookup_table.insert(8.99,2350);
+        shooter_rpm_lookup_table.insert(9.19,2375);
+        shooter_rpm_lookup_table.insert(9.4,2400);
+        shooter_rpm_lookup_table.insert(10.065,2500);
+        shooter_rpm_lookup_table.insert(10.26,2600);
+        shooter_rpm_lookup_table.insert(10.8,2625);
 
         first_time = false;
     }
