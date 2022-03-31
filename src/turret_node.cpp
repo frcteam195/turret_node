@@ -194,7 +194,7 @@ float lookup_corrected_distance(float input)
         distance_correction_map.insert(450.0, 470.996);
         first = false;
     }
-    ROS_INFO("Inches Input: %f, output: %f", input_inches, distance_correction_map.lookup(input_inches) * INCHES_TO_METERS);
+    // ROS_INFO("Inches Input: %f, output: %f", input_inches, distance_correction_map.lookup(input_inches) * INCHES_TO_METERS);
     return distance_correction_map.lookup(input_inches) * INCHES_TO_METERS;
     
 }
