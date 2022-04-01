@@ -32,6 +32,7 @@
 #include <nav_msgs/Odometry.h>
 
 #include "ck_utilities/NTHelper.hpp"
+#include "ck_utilities/RateControlledPublisher.hpp"
 
 #define TURRET_SHOOTER_MASTER_CAN_ID 16
 #define TURRET_SHOOTER_SLAVE_CAN_ID 17
@@ -44,6 +45,8 @@ tf2_ros::TransformBroadcaster *tfBroadcaster;
 tf2_ros::TransformListener *tfListener;
 tf2_ros::Buffer tfBuffer;
 ActionHelper *action_helper;
+ck::ros::RateControlledPublisher<limelight_vision_node::Limelight_Control>* m_limelight_control_pub;
+
 
 enum class TurretStates
 {
@@ -271,8 +274,6 @@ float get_distance_to_hub_limelight()
 
 void turn_limelight_on()
 {
-    static ros::Publisher limelight_control_pub = node->advertise<limelight_vision_node::Limelight_Control>("/LimelightControl", 5);
-
     limelight_vision_node::Limelight limelight;
     limelight.name = "limelight";
     limelight.pipeline = 1;
@@ -280,13 +281,18 @@ void turn_limelight_on()
     limelight_vision_node::Limelight_Control limelight_control;
     limelight_control.limelights.push_back(limelight);
 
-    limelight_control_pub.publish(limelight_control);
+    if (m_limelight_control_pub)
+    {
+        m_limelight_control_pub->publish_at_rate(limelight_control, 20);
+    }
+    else
+    {
+        ROS_ERROR("Failed to send limelight control msg");
+    }
 }
 
 void turn_limelight_off()
 {
-    static ros::Publisher limelight_control_pub = node->advertise<limelight_vision_node::Limelight_Control>("/LimelightControl", 5);
-
     limelight_vision_node::Limelight limelight;
     limelight.name = "limelight";
     limelight.pipeline = 1;
@@ -294,7 +300,14 @@ void turn_limelight_off()
     limelight_vision_node::Limelight_Control limelight_control;
     limelight_control.limelights.push_back(limelight);
 
-    limelight_control_pub.publish(limelight_control);
+    if(m_limelight_control_pub)
+    {
+        m_limelight_control_pub->publish_at_rate(limelight_control, 20);
+    }
+    else
+    {
+        ROS_ERROR("Failed to send limelight control msg");
+    }
 }
 
 void intake_status_callback(const intake_node::Intake_Status &msg)
@@ -939,6 +952,8 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "turret_node");
     ros::NodeHandle n;
     node = &n;
+
+    m_limelight_control_pub = new ck::ros::RateControlledPublisher<limelight_vision_node::Limelight_Control>("");
 
     config_motors();
 
