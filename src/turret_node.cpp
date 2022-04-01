@@ -391,7 +391,7 @@ void set_hood_distance(float distance)
         hood_lookup_table.insert(10.8,0.065);
         first_time = false;
     }
-    target_hood_angle = hood_lookup_table.lookup(distance);
+    target_hood_angle = hood_lookup_table.lookup(distance) * 360.0;
     Turret_Hood_Motor->set(Motor::Control_Mode::MOTION_MAGIC, target_hood_angle / 360.0, 0);
 }
 
