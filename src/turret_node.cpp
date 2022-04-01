@@ -480,7 +480,7 @@ void set_turret_angle(float angleDeg)
 
     if (std::abs(robot_rotation_rate_rad_per_sec) > 0.2)
     {
-        double rawPercentRotation = -(robot_rotation_rate_rad_per_sec / TURRET_MAX_YAW_RATE_RAD_PER_SEC) * 24.0;
+        double rawPercentRotation = -(robot_rotation_rate_rad_per_sec / TURRET_MAX_YAW_RATE_RAD_PER_SEC) * 6.0;
         rawPercentRotation = ck::math::signum(rawPercentRotation) * std::min(std::abs(rawPercentRotation), 1.0);
 
         int turret_direction_signum = ck::math::signum(target_angle - actualTurretYawDeg);
