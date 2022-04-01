@@ -953,7 +953,7 @@ int main(int argc, char **argv)
     ros::NodeHandle n;
     node = &n;
 
-    m_limelight_control_pub = new ck::ros::RateControlledPublisher<limelight_vision_node::Limelight_Control>("");
+    m_limelight_control_pub = new ck::ros::RateControlledPublisher<limelight_vision_node::Limelight_Control>("/LimelightControl");
 
     config_motors();
 
