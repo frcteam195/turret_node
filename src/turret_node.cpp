@@ -686,10 +686,10 @@ void step_state_machine()
     }
     case TurretStates::AIM:
     {
-        if (limelightHasTarget)
-        {
+        // if (limelightHasTarget)
+        // {
             next_turret_state = TurretStates::TARGET_LOCKED;
-        }
+        // }
         break;
 
         // turn on limelight
