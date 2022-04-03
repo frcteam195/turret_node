@@ -394,14 +394,14 @@ void set_hood_distance(float distance)
         hood_lookup_table.insert(6.208,0.0535);
         hood_lookup_table.insert(7.13,0.0575);
         hood_lookup_table.insert(7.66,0.0625);
-        hood_lookup_table.insert(7.93,0.065);
-        hood_lookup_table.insert(8.37,0.065);
-        hood_lookup_table.insert(8.99,0.065);
-        hood_lookup_table.insert(9.19,0.065);
-        hood_lookup_table.insert(9.4,0.065);
-        hood_lookup_table.insert(10.065,0.065);
-        hood_lookup_table.insert(10.26,0.065);
-        hood_lookup_table.insert(10.8,0.065);
+        hood_lookup_table.insert(7.93,0.06375);
+        hood_lookup_table.insert(8.37,0.06375);
+        hood_lookup_table.insert(8.99,0.06375);
+        hood_lookup_table.insert(9.19,0.06375);
+        hood_lookup_table.insert(9.4,0.06375);
+        hood_lookup_table.insert(10.06375,0.06375);
+        hood_lookup_table.insert(10.26,0.06375);
+        hood_lookup_table.insert(10.8,0.06375);
         first_time = false;
     }
     target_hood_angle = hood_lookup_table.lookup(distance) * 360.0;
@@ -726,7 +726,7 @@ void step_state_machine()
     }
     case TurretStates::SHOOT:
     {
-        if (time_in_state > ros::Duration(.75))
+        if (time_in_state > ros::Duration(0.7))
         {
             next_turret_state = TurretStates::TRACKING;
         }
@@ -776,7 +776,7 @@ void config_motors()
     Turret_Hood_Motor->config().set_motion_cruise_velocity(10000);
     Turret_Hood_Motor->config().set_motion_acceleration(32000);
     // Turret_Hood_Motor->config().set_motion_s_curve_strength(5);
-    Turret_Hood_Motor->config().set_forward_soft_limit(21.0/360.0);
+    Turret_Hood_Motor->config().set_forward_soft_limit(23/360.0);
     Turret_Hood_Motor->config().set_forward_soft_limit_enable(true);
     Turret_Hood_Motor->config().set_reverse_soft_limit(0);
     Turret_Hood_Motor->config().set_reverse_soft_limit_enable(true);
