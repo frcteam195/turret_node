@@ -47,7 +47,7 @@ tf2_ros::TransformListener *tfListener;
 tf2_ros::Buffer tfBuffer;
 ActionHelper *action_helper;
 ck::ros::RateControlledPublisher<limelight_vision_node::Limelight_Control>* m_limelight_control_pub;
-ck::MovingAverage mShooterRPMAverage(5);
+ck::MovingAverage mShooterRPMAverage(7);
 
 enum class TurretStates
 {
@@ -63,7 +63,7 @@ enum class TurretStates
 static constexpr double SHOOTER_RPM_DELTA = 150;
 static constexpr float HOOD_DEG_DELTA = 2;
 static constexpr float TURRET_YAW_DEG_DELTA = 2;
-static constexpr float SHOOTER_RPM_FILTER_TIME = 0.0;
+static constexpr float SHOOTER_RPM_FILTER_TIME = 0.15;
 
 
 static TurretStates turret_state = TurretStates::TRACKING;
@@ -556,7 +556,7 @@ void step_state_machine()
 
     at_shooter_rpm_time = (float) ros::Duration(ros::Time::now() - shooter_rpm_false_time).toSec();
 
-    at_target_shooter_rpm = at_shooter_rpm;// && at_shooter_rpm_time > SHOOTER_RPM_FILTER_TIME;
+    at_target_shooter_rpm = at_shooter_rpm && at_shooter_rpm_time > SHOOTER_RPM_FILTER_TIME;
     at_target_hood_angle = reached_target_hood_deg(target_hood_angle);
     at_target_yaw_angle = reached_target_turret_yaw_deg(target_yaw_angle);
     at_target_limelight_angle = true;//reached_limelight_position(limelight_tx);
