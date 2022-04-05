@@ -47,7 +47,7 @@ tf2_ros::TransformListener *tfListener;
 tf2_ros::Buffer tfBuffer;
 ActionHelper *action_helper;
 ck::ros::RateControlledPublisher<limelight_vision_node::Limelight_Control>* m_limelight_control_pub;
-ck::MovingAverage mShooterRPMAverage(5);
+ck::MovingAverage mShooterRPMAverage(7);
 
 enum class TurretStates
 {
