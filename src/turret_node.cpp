@@ -428,8 +428,8 @@ void set_shooter_vel(float distance)
         shooter_rpm_lookup_table.insert(3.96,1475); // MGT - tweak this up a bit - used to be 1460
         shooter_rpm_lookup_table.insert(4.37,1535); // MGT - tweak this up a bit - used to be 1525
         shooter_rpm_lookup_table.insert(4.65,1600);
-        shooter_rpm_lookup_table.insert(4.99,1725);
-        shooter_rpm_lookup_table.insert(5.52,1775); // MGT - tweak this down a bit - used to be 1800
+        shooter_rpm_lookup_table.insert(4.99,1710); // MGT - tweak this down a bit - used to be 1725
+        shooter_rpm_lookup_table.insert(5.52,1760); // MGT - tweak this down a bit - used to be 1800
         shooter_rpm_lookup_table.insert(5.79,1850);
         shooter_rpm_lookup_table.insert(6.208,1900);
         shooter_rpm_lookup_table.insert(7.13,1950);
