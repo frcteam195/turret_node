@@ -419,8 +419,8 @@ void set_shooter_vel(float distance)
     {
         shooter_rpm_lookup_table.insert(1.161,1125);
         shooter_rpm_lookup_table.insert(1.473,1125);
-        shooter_rpm_lookup_table.insert(1.768,1175);
-        shooter_rpm_lookup_table.insert(2.35,1200);
+        shooter_rpm_lookup_table.insert(1.768,1200); // MGT - tweak this up a bit - used to be 1175
+        shooter_rpm_lookup_table.insert(2.35,1235); // MGT - tweak this up a bit - used to be 1200
         shooter_rpm_lookup_table.insert(2.728,1285); // MGT - tweak this up a bit - used to be 1250
         shooter_rpm_lookup_table.insert(3.145,1335); // MGT - tweak this up a bit - used to be 1300
         shooter_rpm_lookup_table.insert(3.38,1395); // MGT - tweak this up a bit - used to be 1365
@@ -430,10 +430,12 @@ void set_shooter_vel(float distance)
         shooter_rpm_lookup_table.insert(4.65,1600);
         shooter_rpm_lookup_table.insert(4.99,1680); // MGT - tweak this down a bit - used to be 1725
         shooter_rpm_lookup_table.insert(5.18,1720); // RAH - add point to smooth
-        shooter_rpm_lookup_table.insert(5.52,1790); // MGT - tweak this down a bit - used to be 1800
-        shooter_rpm_lookup_table.insert(5.79,1840); // RAH - tweak this down a bit - used to be 1850
-        shooter_rpm_lookup_table.insert(6.208,1900);
-        shooter_rpm_lookup_table.insert(7.13,1950);
+        shooter_rpm_lookup_table.insert(5.52,1780); // MGT - tweak this down a bit - used to be 1800
+        shooter_rpm_lookup_table.insert(5.79,1800); // RAH - tweak this down a bit - used to be 1850
+        shooter_rpm_lookup_table.insert(6.208,1800); // RAH - tweak this down a bit - used to be 1900
+        shooter_rpm_lookup_table.insert(6.48,1790); // RAH - add point to smooth
+        shooter_rpm_lookup_table.insert(6.7,1770); // RAH - add point to smooth
+        shooter_rpm_lookup_table.insert(7.13,1860); // RAH - tweak this down a bit - used to be 1950
         shooter_rpm_lookup_table.insert(7.66,2100); // MGT - tweak this up a bit - used to be 2050
         shooter_rpm_lookup_table.insert(7.93,2200); // MGT - tweak this up a bit - used to be 2150
         shooter_rpm_lookup_table.insert(8.37,2250);
