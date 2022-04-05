@@ -32,6 +32,7 @@
 #include <nav_msgs/Odometry.h>
 
 #include "ck_utilities/NTHelper.hpp"
+#include "ck_utilities/MovingAverage.hpp"
 #include "ck_utilities/RateControlledPublisher.hpp"
 
 #define TURRET_SHOOTER_MASTER_CAN_ID 16
@@ -46,7 +47,7 @@ tf2_ros::TransformListener *tfListener;
 tf2_ros::Buffer tfBuffer;
 ActionHelper *action_helper;
 ck::ros::RateControlledPublisher<limelight_vision_node::Limelight_Control>* m_limelight_control_pub;
-
+ck::MovingAverage mShooterRPMAverage(5);
 
 enum class TurretStates
 {
@@ -59,10 +60,10 @@ enum class TurretStates
     PREPARE_CLIMB
 };
 
-static constexpr float SHOOTER_RPM_DELTA = 250;
+static constexpr float SHOOTER_RPM_DELTA = 150;
 static constexpr float HOOD_DEG_DELTA = 2;
 static constexpr float TURRET_YAW_DEG_DELTA = 2;
-static constexpr float SHOOTER_RPM_FILTER_TIME = 0.2;
+static constexpr float SHOOTER_RPM_FILTER_TIME = 0.0;
 
 
 static TurretStates turret_state = TurretStates::TRACKING;
@@ -350,8 +351,10 @@ static float target_hood_offset = 0;
 static float target_yaw_offset = 0;
 bool reached_target_vel(float targetVel)
 {
+
     target_vel_offset = fabs(targetVel - actualShooterRPM);
-    return ck::math::inRange(targetVel - actualShooterRPM, SHOOTER_RPM_DELTA);
+    mShooterRPMAverage.addSample(targetVel - actualShooterRPM);
+    return ck::math::inRange(mShooterRPMAverage.getAverage(), SHOOTER_RPM_DELTA);
 }
 
 bool reached_target_hood_deg(float targetHoodDeg)
@@ -553,7 +556,7 @@ void step_state_machine()
 
     at_shooter_rpm_time = (float) ros::Duration(ros::Time::now() - shooter_rpm_false_time).toSec();
 
-    at_target_shooter_rpm = at_shooter_rpm && at_shooter_rpm_time > SHOOTER_RPM_FILTER_TIME;
+    at_target_shooter_rpm = at_shooter_rpm;// && at_shooter_rpm_time > SHOOTER_RPM_FILTER_TIME;
     at_target_hood_angle = reached_target_hood_deg(target_hood_angle);
     at_target_yaw_angle = reached_target_turret_yaw_deg(target_yaw_angle);
     at_target_limelight_angle = true;//reached_limelight_position(limelight_tx);
