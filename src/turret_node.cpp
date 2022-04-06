@@ -793,10 +793,10 @@ void config_motors()
     Turret_Shooter_Slave_Motor->config().set_peak_output_reverse(-0.5);
     Turret_Shooter_Slave_Motor->config().apply();
 
-    Turret_Shooter_Master->config().set_kP(0.023);
+    Turret_Shooter_Master->config().set_kP(0.014);
     Turret_Shooter_Master->config().set_kI(0.0);
-    Turret_Shooter_Master->config().set_kD(1);
-    Turret_Shooter_Master->config().set_kF(0.0466);
+    Turret_Shooter_Master->config().set_kD(2.4);
+    Turret_Shooter_Master->config().set_kF(0.0465);
     Turret_Shooter_Master->config().set_closed_loop_ramp(0.25);
     Turret_Shooter_Master->config().set_peak_output_reverse(-0.5);
     Turret_Shooter_Master->config().set_supply_current_limit(true, 40, 20, 1);
