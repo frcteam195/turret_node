@@ -93,6 +93,8 @@ static bool ready_to_climb = false;
 static float limelight_tx = 0;
 static float at_shooter_rpm_time = 0;
 
+static float shuffleboard_offset = 0;
+
 static bool hooks_deployed = false;
 
 static double robot_rotation_rate_rad_per_sec = 0;
@@ -448,7 +450,7 @@ void set_shooter_vel(float distance)
 
         first_time = false;
     }
-    target_shooter_rpm = shooter_rpm_lookup_table.lookup(distance);
+    target_shooter_rpm = shooter_rpm_lookup_table.lookup(distance) + shuffleboard_offset;
     Turret_Shooter_Master->set(Motor::Control_Mode::VELOCITY, target_shooter_rpm, 0);
 }
 
@@ -911,6 +913,7 @@ void publish_diagnostic_data()
     diagnostics.about_to_shoot = about_to_shoot;
     diagnostics.limelight_tx = limelight_tx;
     diagnostics.turret_arbFF = turret_arbFF;
+    diagnostics.shuffleboard_offset = shuffleboard_offset;
 
     if(limelightHasTarget)
     {
@@ -944,6 +947,9 @@ void publish_turret_status()
     status_publisher.publish(status);
     turret_climb_ready_publisher.publish(turretClimbStatus);
 }
+
+
+
 void publish_shuffleboard_data()
 {
     static std::string table_name = "dashboard_data";
@@ -951,6 +957,9 @@ void publish_shuffleboard_data()
     ck::nt::set(table_name, "shooter_rpm", actualShooterRPM);
     ck::nt::set(table_name, "hood_angle", actualHoodDeg);
     ck::nt::set(table_name, "turret_angle", actualTurretYawDeg);
+    ros::Time last_valid;
+    ck::nt::get(shuffleboard_offset, last_valid, table_name, "shuffleboard_offset", (float) 0.0);
+    ck::nt::set(table_name, "live_shuffleboard_offset", shuffleboard_offset);
 }
 
 int main(int argc, char **argv)
