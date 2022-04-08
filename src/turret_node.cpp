@@ -571,7 +571,8 @@ void step_state_machine()
 
     about_to_shoot = turret_state == TurretStates::SPIN_UP_SHOOTER || turret_state == TurretStates::SHOOT;
 
-
+    static float locked_in_shoot_distance = 0;
+    static float locked_in_angle = 0;
 
     switch (turret_state)
     {
@@ -639,6 +640,9 @@ void step_state_machine()
         set_hood_distance(distance);
         set_shooter_vel(distance);
 
+        locked_in_shoot_distance = distance;
+        locked_in_angle = angle;
+
         break;
 
         // sets shooter vel
@@ -647,6 +651,9 @@ void step_state_machine()
     {
 
         turn_limelight_on();
+
+        distance = locked_in_shoot_distance;
+        angle = locked_in_angle;
 
         set_turret_angle(angle);
         set_hood_distance(distance);
