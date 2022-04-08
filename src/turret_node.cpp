@@ -92,6 +92,7 @@ static bool about_to_shoot = false;
 static bool ready_to_climb = false;
 static float limelight_tx = 0;
 static float at_shooter_rpm_time = 0;
+static float robot_distance = 0;
 
 static float shuffleboard_offset = 0;
 
@@ -758,6 +759,7 @@ void step_state_machine()
     }
     }
 
+    robot_distance = distance;
     intakeControlPublisher.publish(controlMsg);
 }
 
@@ -921,15 +923,7 @@ void publish_diagnostic_data()
     diagnostics.limelight_tx = limelight_tx;
     diagnostics.turret_arbFF = turret_arbFF;
     diagnostics.shuffleboard_offset = shuffleboard_offset;
-
-    if(limelightHasTarget)
-    {
-        diagnostics.robot_distance = get_distance_to_hub_limelight();
-    }
-    else
-    {
-        diagnostics.robot_distance = get_distance_to_hub();
-    }
+    diagnostics.robot_distance = robot_distance;
     diagnostic_publisher.publish(diagnostics);
 
     float odometry_angle = get_angle_to_hub();
@@ -964,6 +958,7 @@ void publish_shuffleboard_data()
     ck::nt::set(table_name, "shooter_rpm", actualShooterRPM);
     ck::nt::set(table_name, "hood_angle", actualHoodDeg);
     ck::nt::set(table_name, "turret_angle", actualTurretYawDeg);
+    ck::nt::set(table_name, "robot_distance", robot_distance);
     ros::Time last_valid;
     ck::nt::get(shuffleboard_offset, last_valid, table_name, "shuffleboard_offset", (float) 0.0);
     ck::nt::set(table_name, "live_shuffleboard_offset", shuffleboard_offset);
