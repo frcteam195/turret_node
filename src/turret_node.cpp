@@ -332,6 +332,18 @@ void hmi_signal_callback(const hmi_agent_node::HMI_Signals &msg)
     target_manual_yaw_angle = msg.turret_aim_degrees;
     manual_control_enabled = msg.turret_manual;
     allowed_to_shoot = msg.allow_shoot;
+    static bool last_increase_offset = false;
+    if(msg.increase_offset && !last_increase_offset)
+    {
+        shuffleboard_offset += 10.0;
+    }
+    last_increase_offset = msg.increase_offset;
+    static bool last_decrease_offset = false;
+    if(msg.decrease_offset && !last_decrease_offset)
+    {
+        shuffleboard_offset -= 10.0;
+    }
+    last_decrease_offset = msg.decrease_offset;
     if (!hooks_deployed)
     {
         hooks_deployed = msg.deploy_hooks;
@@ -960,7 +972,7 @@ void publish_shuffleboard_data()
     ck::nt::set(table_name, "turret_angle", actualTurretYawDeg);
     ck::nt::set(table_name, "robot_distance", robot_distance);
     ros::Time last_valid;
-    ck::nt::get(shuffleboard_offset, last_valid, table_name, "shuffleboard_offset", (float) 0.0);
+    // ck::nt::get(shuffleboard_offset, last_valid, table_name, "shuffleboard_offset", (float) 0.0);
     ck::nt::set(table_name, "live_shuffleboard_offset", shuffleboard_offset);
 }
 
