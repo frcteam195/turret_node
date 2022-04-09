@@ -467,7 +467,7 @@ void set_shooter_vel(float distance)
         shooter_rpm_lookup_table.insert(6.7,1770); // RAH - add point to smooth
         shooter_rpm_lookup_table.insert(7.13,1975); // RAH - tweak this down a bit - used to be 1950
         shooter_rpm_lookup_table.insert(7.66,2075); // MGT - tweak this up a bit - used to be 2050
-        shooter_rpm_lookup_table.insert(7.93,2075); // MGT - tweak this up a bit - used to be 2150
+        shooter_rpm_lookup_table.insert(7.93,2110); // MGT - tweak this up a bit - used to be 2150
         shooter_rpm_lookup_table.insert(8.37,2200);
         shooter_rpm_lookup_table.insert(8.99,2300);
         shooter_rpm_lookup_table.insert(9.19,2375);
