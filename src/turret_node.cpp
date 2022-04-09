@@ -95,6 +95,7 @@ static float at_shooter_rpm_time = 0;
 static float robot_distance = 0;
 
 static float shuffleboard_offset = 0;
+static float shuffleboard_angle_offset = 0;
 
 static bool hooks_deployed = false;
 
@@ -349,6 +350,20 @@ void hmi_signal_callback(const hmi_agent_node::HMI_Signals &msg)
         hooks_deployed = msg.deploy_hooks;
     }
 
+    static bool last_angle_increase_offset = false;
+    if(msg.angle_increase_offset && !last_angle_increase_offset)
+    {
+        shuffleboard_angle_offset += 1.0;
+    }
+    last_angle_increase_offset = msg.angle_increase_offset;
+
+    static bool last_angle_decrease_offset = false;
+    if(msg.angle_decrease_offset && !last_angle_decrease_offset)
+    {
+        shuffleboard_angle_offset -= 1.0;
+    }
+    last_angle_decrease_offset = msg.angle_decrease_offset;
+
     // still needs to be updated
 }
 
@@ -422,7 +437,7 @@ void set_hood_distance(float distance)
         hood_lookup_table.insert(10.8,0.06375);
         first_time = false;
     }
-    target_hood_angle = hood_lookup_table.lookup(distance) * 360.0;
+    target_hood_angle = (hood_lookup_table.lookup(distance) * 360.0) + shuffleboard_angle_offset;
     Turret_Hood_Motor->set(Motor::Control_Mode::MOTION_MAGIC, target_hood_angle / 360.0, 0);
 }
 
@@ -935,6 +950,7 @@ void publish_diagnostic_data()
     diagnostics.limelight_tx = limelight_tx;
     diagnostics.turret_arbFF = turret_arbFF;
     diagnostics.shuffleboard_offset = shuffleboard_offset;
+    diagnostics.shuffleboard_angle_offset = shuffleboard_angle_offset;
     diagnostics.robot_distance = robot_distance;
     diagnostic_publisher.publish(diagnostics);
 
@@ -974,6 +990,7 @@ void publish_shuffleboard_data()
     ros::Time last_valid;
     // ck::nt::get(shuffleboard_offset, last_valid, table_name, "shuffleboard_offset", (float) 0.0);
     ck::nt::set(table_name, "live_shuffleboard_offset", shuffleboard_offset);
+    ck::nt::set(table_name, "live_shuffleboard_angle_offset", shuffleboard_offset);
 }
 
 int main(int argc, char **argv)

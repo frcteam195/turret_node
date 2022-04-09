@@ -27,3 +27,4 @@ float64 turret_arbFF
 float64 turret_radPercentOut
 float64 turret_target_direction_sign
 float32 shuffleboard_offset
+float32 shuffleboard_angle_offset
