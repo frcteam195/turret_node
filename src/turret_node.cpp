@@ -411,8 +411,8 @@ void set_hood_distance(float distance)
         hood_lookup_table.insert(5.79,0.0515);
         hood_lookup_table.insert(6.208,0.0535);
         hood_lookup_table.insert(7.13,0.0575);
-        hood_lookup_table.insert(7.66,0.0605);
-        hood_lookup_table.insert(7.93,0.0605);
+        hood_lookup_table.insert(7.66,0.0615);
+        hood_lookup_table.insert(7.93,0.0615);
         hood_lookup_table.insert(8.37,0.06375);
         hood_lookup_table.insert(8.99,0.06375);
         hood_lookup_table.insert(9.19,0.06375);
@@ -450,9 +450,9 @@ void set_shooter_vel(float distance)
         shooter_rpm_lookup_table.insert(6.208,1800); // RAH - tweak this down a bit - used to be 1900
         shooter_rpm_lookup_table.insert(6.48,1790); // RAH - add point to smooth
         shooter_rpm_lookup_table.insert(6.7,1770); // RAH - add point to smooth
-        shooter_rpm_lookup_table.insert(7.13,1925); // RAH - tweak this down a bit - used to be 1950
-        shooter_rpm_lookup_table.insert(7.66,2050); // MGT - tweak this up a bit - used to be 2050
-        shooter_rpm_lookup_table.insert(7.93,2175); // MGT - tweak this up a bit - used to be 2150
+        shooter_rpm_lookup_table.insert(7.13,1975); // RAH - tweak this down a bit - used to be 1950
+        shooter_rpm_lookup_table.insert(7.66,2075); // MGT - tweak this up a bit - used to be 2050
+        shooter_rpm_lookup_table.insert(7.93,2075); // MGT - tweak this up a bit - used to be 2150
         shooter_rpm_lookup_table.insert(8.37,2200);
         shooter_rpm_lookup_table.insert(8.99,2300);
         shooter_rpm_lookup_table.insert(9.19,2375);
