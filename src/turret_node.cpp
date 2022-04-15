@@ -458,15 +458,15 @@ void set_shooter_vel(float distance)
         shooter_rpm_lookup_table.insert(3.96,1475); // MGT - tweak this up a bit - used to be 1460
         shooter_rpm_lookup_table.insert(4.37,1535); // MGT - tweak this up a bit - used to be 1525
         shooter_rpm_lookup_table.insert(4.65,1600);
-        shooter_rpm_lookup_table.insert(4.99,1680); // MGT - tweak this down a bit - used to be 1725
-        shooter_rpm_lookup_table.insert(5.18,1720); // RAH - add point to smooth
-        shooter_rpm_lookup_table.insert(5.52,1780); // MGT - tweak this down a bit - used to be 1800
-        shooter_rpm_lookup_table.insert(5.79,1800); // RAH - tweak this down a bit - used to be 1850
-        shooter_rpm_lookup_table.insert(6.208,1800); // RAH - tweak this down a bit - used to be 1900
-        shooter_rpm_lookup_table.insert(6.48,1790); // RAH - add point to smooth
-        shooter_rpm_lookup_table.insert(6.7,1770); // RAH - add point to smooth
-        shooter_rpm_lookup_table.insert(7.13,1975); // RAH - tweak this down a bit - used to be 1950
-        shooter_rpm_lookup_table.insert(7.66,2075); // MGT - tweak this up a bit - used to be 2050
+        shooter_rpm_lookup_table.insert(4.99,1630); // MGT - tweak this down a bit - used to be 1725
+        shooter_rpm_lookup_table.insert(5.18,1640); // RAH - add point to smooth
+        shooter_rpm_lookup_table.insert(5.52,1650); // MGT - tweak this down a bit - used to be 1800
+        shooter_rpm_lookup_table.insert(5.79,1660); // RAH - tweak this down a bit - used to be 1850
+        shooter_rpm_lookup_table.insert(6.208,1680); // RAH - tweak this down a bit - used to be 1900
+        shooter_rpm_lookup_table.insert(6.48,1700); // RAH - add point to smooth
+        shooter_rpm_lookup_table.insert(6.7,1710); // RAH - add point to smooth
+        shooter_rpm_lookup_table.insert(7.13,1890); // RAH - tweak this down a bit - used to be 1950
+        shooter_rpm_lookup_table.insert(7.66,2025); // MGT - tweak this up a bit - used to be 2050
         shooter_rpm_lookup_table.insert(7.93,2110); // MGT - tweak this up a bit - used to be 2150
         shooter_rpm_lookup_table.insert(8.37,2200);
         shooter_rpm_lookup_table.insert(8.99,2300);
@@ -810,6 +810,7 @@ void config_motors()
     Turret_Yaw_Motor->config().set_reverse_soft_limit_enable(true);
     Turret_Yaw_Motor->config().set_closed_loop_ramp(0.25);
     Turret_Yaw_Motor->config().set_supply_current_limit(true, 40, 0, 0);
+    Turret_Yaw_Motor->config().set_neutral_mode(MotorConfig::NeutralMode::BRAKE);
     Turret_Yaw_Motor->config().apply();
     Turret_Yaw_Motor->set(Motor::Control_Mode::MOTION_MAGIC, 0, 0);
 
@@ -990,7 +991,7 @@ void publish_shuffleboard_data()
     ros::Time last_valid;
     // ck::nt::get(shuffleboard_offset, last_valid, table_name, "shuffleboard_offset", (float) 0.0);
     ck::nt::set(table_name, "live_shuffleboard_offset", shuffleboard_offset);
-    ck::nt::set(table_name, "live_shuffleboard_angle_offset", shuffleboard_offset);
+    ck::nt::set(table_name, "live_shuffleboard_angle_offset", shuffleboard_angle_offset);
 }
 
 int main(int argc, char **argv)
