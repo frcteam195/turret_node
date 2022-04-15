@@ -457,16 +457,16 @@ void set_shooter_vel(float distance)
         shooter_rpm_lookup_table.insert(3.72,1425); // MGT - tweak this up a bit - used to be 1400
         shooter_rpm_lookup_table.insert(3.96,1475); // MGT - tweak this up a bit - used to be 1460
         shooter_rpm_lookup_table.insert(4.37,1535); // MGT - tweak this up a bit - used to be 1525
-        shooter_rpm_lookup_table.insert(4.65,1600);
-        shooter_rpm_lookup_table.insert(4.99,1630); // MGT - tweak this down a bit - used to be 1725
-        shooter_rpm_lookup_table.insert(5.18,1640); // RAH - add point to smooth
-        shooter_rpm_lookup_table.insert(5.52,1650); // MGT - tweak this down a bit - used to be 1800
-        shooter_rpm_lookup_table.insert(5.79,1660); // RAH - tweak this down a bit - used to be 1850
-        shooter_rpm_lookup_table.insert(6.208,1680); // RAH - tweak this down a bit - used to be 1900
-        shooter_rpm_lookup_table.insert(6.48,1700); // RAH - add point to smooth
-        shooter_rpm_lookup_table.insert(6.7,1710); // RAH - add point to smooth
-        shooter_rpm_lookup_table.insert(7.13,1890); // RAH - tweak this down a bit - used to be 1950
-        shooter_rpm_lookup_table.insert(7.66,2025); // MGT - tweak this up a bit - used to be 2050
+        shooter_rpm_lookup_table.insert(4.65,1610);
+        shooter_rpm_lookup_table.insert(4.99,1725); // MGT - tweak this down a bit - used to be 1725
+        //shooter_rpm_lookup_table.insert(5.18,1710); // RAH - add point to smooth
+        shooter_rpm_lookup_table.insert(5.52,1810); // MGT - tweak this down a bit - used to be 1800
+        shooter_rpm_lookup_table.insert(5.79,1850); // RAH - tweak this down a bit - used to be 1850
+        shooter_rpm_lookup_table.insert(6.208,1900); // RAH - tweak this down a bit - used to be 1900
+        // shooter_rpm_lookup_table.insert(6.48,1770); // RAH - add point to smooth
+        // shooter_rpm_lookup_table.insert(6.7,1790); // RAH - add point to smooth
+        shooter_rpm_lookup_table.insert(7.13,1950); // RAH - tweak this down a bit - used to be 1950
+        shooter_rpm_lookup_table.insert(7.66,2050); // MGT - tweak this up a bit - used to be 2050
         shooter_rpm_lookup_table.insert(7.93,2110); // MGT - tweak this up a bit - used to be 2150
         shooter_rpm_lookup_table.insert(8.37,2200);
         shooter_rpm_lookup_table.insert(8.99,2300);
@@ -478,7 +478,8 @@ void set_shooter_vel(float distance)
 
         first_time = false;
     }
-    target_shooter_rpm = shooter_rpm_lookup_table.lookup(distance) + shuffleboard_offset;
+    static double global_offset_for_uptake = 130.0;
+    target_shooter_rpm = shooter_rpm_lookup_table.lookup(distance) + shuffleboard_offset + global_offset_for_uptake;
     Turret_Shooter_Master->set(Motor::Control_Mode::VELOCITY, target_shooter_rpm, 0);
 }
 
