@@ -447,39 +447,35 @@ void set_shooter_vel(float distance)
     static bool first_time = true;
     if (first_time)
     {
-        shooter_rpm_lookup_table.insert(1.161,1125);
-        shooter_rpm_lookup_table.insert(1.473,1125);
-        shooter_rpm_lookup_table.insert(1.768,1200); // MGT - tweak this up a bit - used to be 1175
-        shooter_rpm_lookup_table.insert(2.35,1235); // MGT - tweak this up a bit - used to be 1200
-        shooter_rpm_lookup_table.insert(2.728,1285); // MGT - tweak this up a bit - used to be 1250
-        shooter_rpm_lookup_table.insert(3.145,1335); // MGT - tweak this up a bit - used to be 1300
-        shooter_rpm_lookup_table.insert(3.38,1395); // MGT - tweak this up a bit - used to be 1365
-        shooter_rpm_lookup_table.insert(3.72,1425); // MGT - tweak this up a bit - used to be 1400
-        shooter_rpm_lookup_table.insert(3.96,1475); // MGT - tweak this up a bit - used to be 1460
-        shooter_rpm_lookup_table.insert(4.37,1535); // MGT - tweak this up a bit - used to be 1525
-        shooter_rpm_lookup_table.insert(4.65,1610);
-        shooter_rpm_lookup_table.insert(4.99,1725); // MGT - tweak this down a bit - used to be 1725
-        //shooter_rpm_lookup_table.insert(5.18,1710); // RAH - add point to smooth
-        shooter_rpm_lookup_table.insert(5.52,1810); // MGT - tweak this down a bit - used to be 1800
-        shooter_rpm_lookup_table.insert(5.79,1850); // RAH - tweak this down a bit - used to be 1850
-        shooter_rpm_lookup_table.insert(6.208,1900); // RAH - tweak this down a bit - used to be 1900
-        // shooter_rpm_lookup_table.insert(6.48,1770); // RAH - add point to smooth
-        // shooter_rpm_lookup_table.insert(6.7,1790); // RAH - add point to smooth
-        shooter_rpm_lookup_table.insert(7.13,1950); // RAH - tweak this down a bit - used to be 1950
-        shooter_rpm_lookup_table.insert(7.66,2050); // MGT - tweak this up a bit - used to be 2050
-        shooter_rpm_lookup_table.insert(7.93,2110); // MGT - tweak this up a bit - used to be 2150
-        shooter_rpm_lookup_table.insert(8.37,2200);
-        shooter_rpm_lookup_table.insert(8.99,2300);
-        shooter_rpm_lookup_table.insert(9.19,2375);
-        shooter_rpm_lookup_table.insert(9.4,2400);
-        shooter_rpm_lookup_table.insert(10.065,2500);
-        shooter_rpm_lookup_table.insert(10.26,2600);
-        shooter_rpm_lookup_table.insert(10.8,2625);
+        shooter_rpm_lookup_table.insert(1.161,1207.375);
+        shooter_rpm_lookup_table.insert(1.473,1197.26388888889);
+        shooter_rpm_lookup_table.insert(1.768,1262.7037037037);
+        shooter_rpm_lookup_table.insert(2.35,1278.84259259259);
+        shooter_rpm_lookup_table.insert(2.728,1316.59259259259);
+        shooter_rpm_lookup_table.insert(3.145,1365);
+        shooter_rpm_lookup_table.insert(3.38,1405);
+        shooter_rpm_lookup_table.insert(3.72,1445);
+        shooter_rpm_lookup_table.insert(3.96,1474);
+        shooter_rpm_lookup_table.insert(4.37,1535);
+        shooter_rpm_lookup_table.insert(4.65,1580);
+        shooter_rpm_lookup_table.insert(4.99,1625);
+        shooter_rpm_lookup_table.insert(5.52,1705);
+        shooter_rpm_lookup_table.insert(5.79,1735);
+        shooter_rpm_lookup_table.insert(6.208,1750);
+        shooter_rpm_lookup_table.insert(7.13,1790);
+        shooter_rpm_lookup_table.insert(7.66,1835);
+        shooter_rpm_lookup_table.insert(7.93,1875);
+        shooter_rpm_lookup_table.insert(8.37,1938.75);
+        shooter_rpm_lookup_table.insert(8.99,2018.65740740741);
+        shooter_rpm_lookup_table.insert(9.19,2052.17592592593);
+        shooter_rpm_lookup_table.insert(9.4,2075.37037037037);
+        shooter_rpm_lookup_table.insert(10.065,2143.81944444444);
+        shooter_rpm_lookup_table.insert(10.26,2217.5);
+        shooter_rpm_lookup_table.insert(10.8,2215);
 
         first_time = false;
     }
-    static double global_offset_for_uptake = 130.0;
-    target_shooter_rpm = shooter_rpm_lookup_table.lookup(distance) + shuffleboard_offset + global_offset_for_uptake;
+    target_shooter_rpm = shooter_rpm_lookup_table.lookup(distance) + shuffleboard_offset;
     Turret_Shooter_Master->set(Motor::Control_Mode::VELOCITY, target_shooter_rpm, 0);
 }
 
