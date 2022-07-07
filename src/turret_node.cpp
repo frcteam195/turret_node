@@ -93,6 +93,7 @@ static bool ready_to_climb = false;
 static float limelight_tx = 0;
 static float at_shooter_rpm_time = 0;
 static float robot_distance = 0;
+static bool shoot_3ball = false;
 
 static float shuffleboard_offset = 0;
 static float shuffleboard_angle_offset = 0;
@@ -333,6 +334,7 @@ void hmi_signal_callback(const hmi_agent_node::HMI_Signals &msg)
     target_manual_yaw_angle = msg.turret_aim_degrees;
     manual_control_enabled = msg.turret_manual;
     allowed_to_shoot = msg.allow_shoot;
+    shoot_3ball = msg.shoot_3ball;
     static bool last_increase_offset = false;
     if(msg.increase_offset && !last_increase_offset)
     {
@@ -767,7 +769,12 @@ void step_state_machine()
     }
     case TurretStates::SHOOT:
     {
-        if (time_in_state > ros::Duration(0.7))
+
+        if (time_in_state > ros::Duration(0.9) && !shoot_3ball)
+        {
+            next_turret_state = TurretStates::TRACKING;
+        }
+        else if (time_in_state > ros::Duration(1.8) && shoot_3ball)
         {
             next_turret_state = TurretStates::TRACKING;
         }
