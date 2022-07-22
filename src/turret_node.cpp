@@ -1009,11 +1009,11 @@ int main(int argc, char **argv)
 
     config_motors();
 
-    ros::Subscriber hmi_subscribe = node->subscribe("/HMISignals", 1, hmi_signal_callback);
-    ros::Subscriber motor_status_subscribe = node->subscribe("/MotorStatus", 1, motor_status_callback);
-    ros::Subscriber limelight_status_subscribe = node->subscribe("/LimelightStatus", 1, limelight_status_callback);
-    ros::Subscriber intake_status_subscribe = node->subscribe("/IntakeStatus", 1, intake_status_callback);
-    ros::Subscriber odometry_subscribe = node->subscribe("/odometry/filtered", 1, odometry_callback);
+    ros::Subscriber hmi_subscribe = node->subscribe("/HMISignals", 1, hmi_signal_callback, ros::TransportHints().tcpNoDelay());
+    ros::Subscriber motor_status_subscribe = node->subscribe("/MotorStatus", 1, motor_status_callback, ros::TransportHints().tcpNoDelay());
+    ros::Subscriber limelight_status_subscribe = node->subscribe("/LimelightStatus", 1, limelight_status_callback, ros::TransportHints().tcpNoDelay());
+    ros::Subscriber intake_status_subscribe = node->subscribe("/IntakeStatus", 1, intake_status_callback, ros::TransportHints().tcpNoDelay());
+    ros::Subscriber odometry_subscribe = node->subscribe("/odometry/filtered", 1, odometry_callback, ros::TransportHints().tcpNoDelay());
 
     action_helper = new ActionHelper(node);
 
