@@ -27,7 +27,7 @@
 
 #include <rio_control_node/Joystick_Status.h>
 #include <rio_control_node/Motor_Status.h>
-#include <hmi_agent_node/HMI_Signals.h>
+#include <ck_ros_msgs_node/HMI_Signals.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <nav_msgs/Odometry.h>
 
@@ -327,7 +327,7 @@ void odometry_callback(const nav_msgs::Odometry &msg)
     robot_rotation_rate_rad_per_sec = msg.twist.twist.angular.z; //rad/s
 }
 
-void hmi_signal_callback(const hmi_agent_node::HMI_Signals &msg)
+void hmi_signal_callback(const ck_ros_msgs_node::HMI_Signals &msg)
 {
     target_manual_hood_angle = msg.turret_hood_degrees;
     target_manual_shooter_rpm = msg.turret_speed_rpm;
